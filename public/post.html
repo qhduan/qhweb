@@ -42,7 +42,7 @@
   <div></div>
 </div>
 <script>
-  var path = document.URL.match(/post.html\?p\-([0-9]+)\-([a-zA-Z0-9\+\=\/]+)$/);
+  var path = document.URL.match(/post.html\?([0-9]+)\-([a-zA-Z0-9\+\=\/]+)$/);
   if (path) {
     var page = parseInt(path[1]);
     if (page == 1)

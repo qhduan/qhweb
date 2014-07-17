@@ -60,7 +60,7 @@
     for (var i = 0; i < index_list[num].length; i++) {
       var data = index_list[num][i];
       var date = data.date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
-      var line = "<a class='list-group-item' href=\"post.html?p-" + current + "-" + 
+      var line = "<a class='list-group-item' href=\"post.html?" + current + "-" + 
         Encode(data.path) + "\" ><span>" + data.title +
         " <small style='float: right;'>(" + date[1] + "-" + date[2] + ")</small></span></a>\n";
       result += line;
@@ -141,7 +141,7 @@
             var html = "";
             for (var i = 0; i < a.length; i++) {
               html += "<a class='btn btn-default btn-sm' style='margin-right: 20px;' href='";
-              html += a[i].path;
+              html += "post.html?" + current + "-" + Encode(a[i].path);
               html += "'>";
               html += a[i].title;
               html += "</a>";
