@@ -1,14 +1,13 @@
 var fs = require("fs");
 var express = require("express");
 var bodyParser = require("body-parser");
-var compress = require("compression");
 var multipart = require('connect-multiparty');
 var tool = require("./tool");
 var post = require("./post");
 
 var app = express();
-app.use(compress({threshold: 32}));
-app.use(bodyParser());
+app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.json())
 
 app.get("/", function (req, res) {
   res.sendfile(__dirname + "/public/index.html");

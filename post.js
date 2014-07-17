@@ -5,7 +5,10 @@ var tool = require("./tool");
 var CurrentList = [];
 function LoadPosts () {
 	var dir = __dirname + "/public/posts";
-	if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+	if (fs.existsSync(dir) == false) {
+		fs.mkdirSync(dir);
+	}
+	if (fs.statSync(dir).isDirectory()) {
 		var result = [];
 		var list = [];
 		list.push(dir);
@@ -157,7 +160,8 @@ function GenerateJson () {
 	
 	// main.json
 	var data = {};
-	data.name = tool.config.site_subtitle;
+	data.name = tool.config.site_name;
+	data.subtitle = tool.config.site_subtitle;
 	data.url = tool.config.url;
 	data.maxpage = Math.ceil(CurrentList.length / tool.config.post_per_page);
 	fs.writeFileSync(path + "/main.json", JSON.stringify(data), {encoding: "utf-8"});
