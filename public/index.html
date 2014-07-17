@@ -7,7 +7,7 @@
   <meta name="description" content="Web Blog - NLWEB">
   <meta name="author" content="longinus">
   <link rel="shortcut icon" href="icon.png">
-  <title>Title Loading</title>
+  <title></title>
   <script src="js/jquery-2.1.1.min.js"></script>
   <script src="js/bootstrap.min.js"></script>
   <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -17,38 +17,43 @@
 <body>
   <div class="container">
     <div class="page-header">
-      <h1><span id="title" style="font-family: 'cursive';" >Loading</span><span style="padding-left: 50px;"></span><small id="subtitle" style="font-family: 'cursive';">Loading</small></h1>
-	  
+      <h1><span id="title" style="font-family: 'cursive';" ></span><span style="padding-left: 50px;"></span><small id="subtitle" style="font-family: 'cursive';"></small></h1>
     </div>
-    <div id="list" class="list-group"><h3>Loading</h3></div>
+    <div id="div-articles" class="page-header" style="margin-top: -10px; padding-left: 40px; display: none;"></div>
+    <div id="list" class="list-group" style="min-height: 200px;"></div>
     <div class="list-group" style="padding-left: 10%; padding-right: 10%;">
     </div>
-    <div class="container">
-	  <div class="row">
-	    <div class="col-xs-3">
-          <label id="pageinfo"></label>
-		</div>
-		<div class="col-xs-3">
-          <button id="prev" class="btn btn-default" disabled>
-	        <span class="glyphicon glyphicon-arrow-left"></span> Prev Page
-          </button>
-		</div>
-		<div class="col-xs-3">
-          <button id="next" class="btn btn-default" disabled>
-	        Next Page <span class="glyphicon glyphicon-arrow-right"></span>
-	      </button>
-		</div>
-		<div class="col-xs-3">
-          <button class="btn btn-default" onclick="window.location.href='/new.html';">
-		    <span class="glyphicon glyphicon-plus"></span> New Post
-	      </button>
-		</div>
-	  </div>
+    <div id="div-btn" class="container" style="display: none;">
+      <div class="row">
+        <div class="col-xs-3" style="padding-left: 100px; padding-top: 5px;">
+              <label id="pageinfo"></label>
+        </div>
+        <div class="col-xs-2">
+              <a class="btn btn-default" href="/">
+             <span class=" glyphicon glyphicon-home"></span> First Page
+              </a>
+        </div>
+        <div class="col-xs-2">
+              <a id="btn-prev" class="btn btn-default" href="#">
+              <span class="glyphicon glyphicon-arrow-left"></span> Prev Page
+              </a>
+        </div>
+        <div class="col-xs-2">
+            <a id="btn-next" class="btn btn-default" href="#">
+              Next Page <span class="glyphicon glyphicon-arrow-right"></span>
+            </a>
+        </div>
+        <div class="col-xs-2">
+            <a class="btn btn-default" href="new.html">
+              <span class="glyphicon glyphicon-plus"></span> New Post
+            </a>
+        </div>
+      </div>
     </div>
   </div>
 <script>
   var index_list = {};
-  var current = 0;
+  var current = 1;
   var maxpage;
   
   function ShowPage (num, callback) {
@@ -56,7 +61,7 @@
     for (var i = 0; i < index_list[num].length; i++) {
       var data = index_list[num][i];
       var date = data.date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
-      var line = "<a class='list-group-item' href=\"post.html?" +
+      var line = "<a class='list-group-item' href=\"post.html?p-" + current + "-" + 
         Encode(data.path) + "\" ><span>" + data.title +
         " <small style='float: right;'>(" + date[1] + "-" + date[2] + ")</small></span></a>\n";
       result += line;
@@ -65,26 +70,8 @@
       result = "<ul>\n" + result + "</ul>";
       document.getElementById("list").innerHTML = result;
     }
-    var number = (num + 1).toString(2);
-    while (number.length < 8)
-      number = "0" + number
-    var maxnumber = maxpage.toString(2);
-    while (maxnumber.length < 8)
-      maxnumber = "0" + maxnumber
     
-    document.getElementById("pageinfo").innerHTML = number + " of " + maxnumber;
-    
-    if (current == 0) {
-      $("#prev").prop("disabled", true);
-    } else {
-      $("#prev").prop("disabled", false);
-    }
-    
-    if (current == (maxpage - 1)) {
-      $("#next").prop("disabled", true);
-    } else {
-      $("#next").prop("disabled", false);
-    }
+    document.getElementById("pageinfo").innerHTML = num + " / " + maxpage;
     
     if (callback) callback();
   }
@@ -95,20 +82,29 @@
     if (index_list[num]) {
       if (callback) callback();
     } else {
-      $.get("/json/page" + num.toString() + ".json", function (data) {
+      $.get("/json/page" + num + ".json", function (data) {
         if (data.length == 0) {
-          Alert("load page error");
+          $("#list").html("load page error");
         } else {
           index_list[num] = data;
           if (callback) callback();
         }
       }, "json").fail(function () {
-        Alert("load page error");
+        $("#list").html("load page error");
       });
     }
   }
   
   $(document).ready(function () {
+    var p = document.URL.match(/\/\?([0-9]+)$/);
+    if (p) {
+      p = p[1];
+      p = parseInt(p);
+      if (p > 0) {
+        current = p;
+      }
+    }
+    
     $.get("/json/main.json", function (data) {
       document.title = data.name;
       $("#title").html("<a href='" + data.url + "'>" + data.name + "</a>");
@@ -116,37 +112,51 @@
       index_list[0] = data.list;
       maxpage = parseInt(data.maxpage);
       if (maxpage > 0) {
-		$("#list").html("<h3>Loading Post</h3><br>");
-        GetPage(0, function () {
-          ShowPage(0);
+        $("#list").html("");
+        if (current < 1 || current > maxpage)
+          window.location.href = "/";
+          
+        GetPage(current, function () {
+          ShowPage(current);
+          
+          if (current == 1) {
+            $("#btn-prev").attr("href", "/?" + maxpage);
+          } else {
+            if (current == 2)
+              $("#btn-prev").attr("href", "/");
+            else
+              $("#btn-prev").attr("href", "/?" + (current - 1));
+          }
+          
+          if (current == maxpage) {
+            $("#btn-next").attr("href", "/");
+          } else {
+            $("#btn-next").attr("href", "/?" + (current + 1));
+          }
+        
+          $("#div-btn").show();
+          
+          if (data.articles && data.articles.length) {
+            var a = data.articles;
+            var d = $("#div-articles");
+            var html = "";
+            for (var i = 0; i < a.length; i++) {
+              html += "<a class='btn btn-default btn-sm' href='";
+              html += a[i].path;
+              html += "'>";
+              html += a[i].title;
+              html += "</a>";
+            }
+            d.html(html);
+            d.show();
+          }
         });
+        
       } else {
         $("#list").html("<h3>No Post</h3><br>");
       }
     }, "json").fail(function () {
-      Alert("system error");
-    });
-    
-    $("#prev").click(function () {
-      if (current <= 0 || $("#prev").html() == "Loading")
-        return;
-      current--;
-      $("#prev").prop("disabled", true);
-      $("#next").prop("disabled", true);
-      GetPage(current, function () {
-        ShowPage(current);
-      });
-    });
-    
-    $("#next").click(function () {
-      if (current >= (maxpage - 1) || $("#next").html() == "Loading")
-        return;
-      current++;
-      $("#prev").prop("disabled", true);
-      $("#next").prop("disabled", true);
-      GetPage(current, function () {
-        ShowPage(current);
-      });
+      $("#list").html("system error");
     });
   });
 </script>

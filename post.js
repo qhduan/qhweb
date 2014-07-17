@@ -49,6 +49,38 @@ function LoadPosts () {
 	}
 }
 
+function LoadArticles () {
+	var dir = __dirname + "/public/articles";
+	if (fs.existsSync(dir) == false) {
+		fs.mkdirSync(dir);
+	}
+	if (fs.statSync(dir).isDirectory()) {
+    var l = fs.readdirSync(dir);
+    var articles = [];
+    for (var i = 0; i < l.length; i++) {
+      var f = dir + "/" + l[i];
+      if (fs.statSync(f).isFile() && f.match(/.md$/)) {
+        var data = fs.readFileSync(f, {encoding: "utf-8"});
+        var header = data.substr(0, data.indexOf("---"));
+        var elem = {};
+        elem.path = f.match(/\/public([^\0]+)$/);
+        elem.title = header.match(/title:\ ([^\0\n]+)\n/);
+        elem.date = header.match(/date:\ ([^\0\n]+)\n/);
+        if (!elem.path || !elem.title || !elem.date) {
+          console.log(elem);
+          throw "An article can't be parsed";
+        }
+        elem.path = elem.path[1];
+        elem.title = elem.title[1];
+        elem.date = elem.date[1];
+        articles.push(elem);
+      }
+    }
+    return articles;
+  } else {
+		throw "Fail to load posts";
+	}
+}
 
 function CreatePost (req, res, callback) {
   var title = req.body.title;
@@ -164,10 +196,12 @@ function GenerateJson () {
 	data.subtitle = tool.config.site_subtitle;
 	data.url = tool.config.url;
 	data.maxpage = Math.ceil(CurrentList.length / tool.config.post_per_page);
+  data.articles = LoadArticles();
 	fs.writeFileSync(path + "/main.json", JSON.stringify(data), {encoding: "utf-8"});
 	
+  // pageX.json
 	for (var i = 0; i < data.maxpage; i++) {
-		fs.writeFileSync(path + "/page" + i + ".json", JSON.stringify(GetPage(i)), {encoding: "utf-8"});
+		fs.writeFileSync(path + "/page" + (i + 1) + ".json", JSON.stringify(GetPage(i)), {encoding: "utf-8"});
 	}
 	
 	console.log("Generate", data.maxpage, "+ 1 json");

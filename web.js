@@ -18,11 +18,9 @@ app.get("/regen", function (req, res) {
   var t = (new Date()).getTime();
   if (last_regen == null || Math.abs(t - last_regen) > 5000) { // 5s
     last_regen = t;
-    post.load(function (list) {
-      post.generate(list, function () {
-        res.end("OK");
-      });
-    });
+    post.load();
+    post.generate();
+    res.end("OK");
   } else {
     res.end("NO");
   }

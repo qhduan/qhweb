@@ -32,19 +32,25 @@
 <body>
 <div class="container">
   <div class="page-header">
-    <h1><span id="title" style="font-family: 'cursive';" >Loading</span></h1>
-	<h3 id="subtitle" style="float: right; font-family: 'cursive';">Loading</h3>
-    <a onclick="window.location.href='/';" class="btn btn-default" style="">
-	  <span class="glyphicon glyphicon-chevron-left"></span> Home
-	</a>
+    <h1><span id="title" style="font-family: 'cursive';" ></span></h1>
+	<h3 id="subtitle" style="float: right; font-family: 'cursive';"></h3>
+    <a href="/" id="btn-home" class="btn btn-default">
+      <span class="glyphicon glyphicon-chevron-left"></span> Home
+    </a>
   </div>
-  <div id="content" style="font-size: 1.2em;">Loading</div>
+  <div id="content" style="font-size: 1.2em;"></div>
   <div></div>
 </div>
 <script>
-  var path = document.URL.match(/post.html\?([^\0]+)$/);
+  var path = document.URL.match(/post.html\?p\-([0-9]+)\-([a-zA-Z0-9\+\=\/]+)$/);
   if (path) {
-    path = path[1].trim();
+    var page = parseInt(path[1]);
+    if (page == 1)
+      $("#btn-home").attr("href", "/");
+    else
+      $("#btn-home").attr("href", "/?" + page);
+    
+    path = path[2].trim();
     try {
       path = Decode(path);
     } catch (e) {
@@ -66,6 +72,8 @@
         window.location.href = "/";
       });
     });
+  } else {
+    //window.location.href = "/";
   }
   
 </script>
