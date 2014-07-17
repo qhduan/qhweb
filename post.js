@@ -5,7 +5,7 @@ var tool = require("./tool");
 var CurrentList = [];
 function LoadPosts () {
 	var dir = __dirname + "/public/posts";
-	if (fs.existsSync(dir) == false) {
+	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir);
 	}
 	if (fs.statSync(dir).isDirectory()) {
@@ -51,7 +51,7 @@ function LoadPosts () {
 
 function LoadArticles () {
 	var dir = __dirname + "/public/articles";
-	if (fs.existsSync(dir) == false) {
+	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir);
 	}
 	if (fs.statSync(dir).isDirectory()) {
@@ -180,8 +180,9 @@ function GetPage (num) {
 function GenerateJson () {
 	var path = __dirname + "/public/json";
   
-	if (fs.existsSync(path) == false)
+	if (!fs.existsSync(path)) {
 		fs.mkdirSync(path);
+  }
 		
 	var files = fs.readdirSync(path);
 	if (files.length > 0) {

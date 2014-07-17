@@ -91,24 +91,28 @@ function Upload(req, res) {
   var path = util.format(__dirname + "/public/uploads/%s/%s/%s", year, month, filename);
   
   if (fs.existsSync(path)) {
-  res.json({info: "file conflict!"});
-    fs.unlink(file.path, function (err) {
-    if(err) throw err;
-  });
-  return;
+    res.json({info: "file conflict!"});
+      fs.unlink(file.path, function (err) {
+      if(err) throw err;
+    });
+    return;
+  }
+  
+  if (!fs.existsSync(__dirname + "/public/uploads")) {
+    fs.mkdirSync(__dirname + "/public/uploads");
   }
   
   if (!fs.existsSync(util.format(__dirname + "/public/uploads/%s", year))) {
-  fs.mkdirSync(util.format(__dirname + "/public/uploads/%s", year));
+    fs.mkdirSync(util.format(__dirname + "/public/uploads/%s", year));
   }
   
   if (!fs.existsSync(util.format(__dirname + "/public/uploads/%s/%s", year, month))) {
-  fs.mkdirSync(util.format(__dirname + "/public/uploads/%s/%s", year, month));
+    fs.mkdirSync(util.format(__dirname + "/public/uploads/%s/%s", year, month));
   }
   
   fs.rename(file.path, path, function (err) {
-  if (err) throw err;
-  res.json({info: "ok", name: file.originalFilename, path: path.match(/\/uploads\/[^\0]+$/)[0]});
+    if (err) throw err;
+    res.json({info: "ok", name: file.originalFilename, path: path.match(/\/uploads\/[^\0]+$/)[0]});
   });
 }
 
