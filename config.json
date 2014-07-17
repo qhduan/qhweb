@@ -1,0 +1,13 @@
+{
+  "site_name": "QHD's Site",
+
+  "url": "http://qhduan.com/",
+  
+  "site_subtitle": "mail@qhduan.com",
+  
+  "post_per_page": 15,
+  
+  "key": "sweethome",
+  
+  "port": 80
+}

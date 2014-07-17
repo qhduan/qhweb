@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="description" content="Web Blog - NLWEB">
+  <meta name="author" content="longinus">
+  <link rel="shortcut icon" href="icon.png">
+  <title>Title Loading</title>
+  <script src="js/jquery-2.1.1.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+  <script src="js/util.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1><span id="title" style="font-family: 'cursive';" >Loading</span><span style="padding-left: 50px;"></span><small id="subtitle" style="font-family: 'cursive';">Loading</small></h1>
+	  
+    </div>
+    <div id="list" class="list-group"><h3>Loading</h3></div>
+    <div class="list-group" style="padding-left: 10%; padding-right: 10%;">
+    </div>
+    <div class="container">
+	  <div class="row">
+	    <div class="col-xs-3">
+          <label id="pageinfo"></label>
+		</div>
+		<div class="col-xs-3">
+          <button id="prev" class="btn btn-default" disabled>
+	        <span class="glyphicon glyphicon-arrow-left"></span> Prev Page
+          </button>
+		</div>
+		<div class="col-xs-3">
+          <button id="next" class="btn btn-default" disabled>
+	        Next Page <span class="glyphicon glyphicon-arrow-right"></span>
+	      </button>
+		</div>
+		<div class="col-xs-3">
+          <button class="btn btn-default" onclick="window.location.href='/new.html';">
+		    <span class="glyphicon glyphicon-plus"></span> New Post
+	      </button>
+		</div>
+	  </div>
+    </div>
+  </div>
+<script>
+  var index_list = {};
+  var current = 0;
+  var maxpage;
+  
+  function ShowPage (num, callback) {
+    var result = "";
+    for (var i = 0; i < index_list[num].length; i++) {
+      var data = index_list[num][i];
+      var date = data.date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
+      var line = "<a class='list-group-item' href=\"post.html?" +
+        Encode(data.path) + "\" ><span>" + data.title +
+        " <small style='float: right;'>(" + date[1] + "-" + date[2] + ")</small></span></a>\n";
+      result += line;
+    }
+    if (result != "") {
+      result = "<ul>\n" + result + "</ul>";
+      document.getElementById("list").innerHTML = result;
+    }
+    var number = (num + 1).toString(2);
+    while (number.length < 8)
+      number = "0" + number
+    var maxnumber = maxpage.toString(2);
+    while (maxnumber.length < 8)
+      maxnumber = "0" + maxnumber
+    
+    document.getElementById("pageinfo").innerHTML = number + " of " + maxnumber;
+    
+    if (current == 0) {
+      $("#prev").prop("disabled", true);
+    } else {
+      $("#prev").prop("disabled", false);
+    }
+    
+    if (current == (maxpage - 1)) {
+      $("#next").prop("disabled", true);
+    } else {
+      $("#next").prop("disabled", false);
+    }
+    
+    if (callback) callback();
+  }
+  
+  function GetPage(num, callback) {
+    if (num < 0 || num > maxpage)
+      return;
+    if (index_list[num]) {
+      if (callback) callback();
+    } else {
+      $.get("/json/page" + num.toString() + ".json", function (data) {
+        if (data.length == 0) {
+          Alert("load page error");
+        } else {
+          index_list[num] = data;
+          if (callback) callback();
+        }
+      }, "json").fail(function () {
+        Alert("load page error");
+      });
+    }
+  }
+  
+  $(document).ready(function () {
+    $.get("/json/main.json", function (data) {
+      document.title = data.name;
+      $("#title").html("<a href='" + data.url + "'>" + data.name + "</a>");
+      $("#subtitle").html(data.subtitle);
+      index_list[0] = data.list;
+      maxpage = parseInt(data.maxpage);
+      if (maxpage > 0) {
+		$("#list").html("<h3>Loading Post</h3><br>");
+        GetPage(0, function () {
+          ShowPage(0);
+        });
+      } else {
+        $("#list").html("<h3>No Post</h3><br>");
+      }
+    }, "json").fail(function () {
+      Alert("system error");
+    });
+    
+    $("#prev").click(function () {
+      if (current <= 0 || $("#prev").html() == "Loading")
+        return;
+      current--;
+      $("#prev").prop("disabled", true);
+      $("#next").prop("disabled", true);
+      GetPage(current, function () {
+        ShowPage(current);
+      });
+    });
+    
+    $("#next").click(function () {
+      if (current >= (maxpage - 1) || $("#next").html() == "Loading")
+        return;
+      current++;
+      $("#prev").prop("disabled", true);
+      $("#next").prop("disabled", true);
+      GetPage(current, function () {
+        ShowPage(current);
+      });
+    });
+  });
+</script>
+</body>
+</html>

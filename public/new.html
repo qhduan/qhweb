@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="description" content="Web Blog - NLWEB">
+  <meta name="author" content="longinus">
+  <link rel="shortcut icon" href="icon.png">
+  <title>Create Post</title>
+  <script src="js/jquery-2.1.1.min.js"></script>
+  <script src="js/markdown.js"></script>
+  <script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    extensions: ["tex2jax.js"],
+    jax: ["input/TeX", "output/HTML-CSS"],
+    tex2jax: {
+      inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+      displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+      processEscapes: true
+    },
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+  </script>
+  <script src="js/mathjax/MathJax.js?config=TeX-AMS_HTML">
+  </script>
+  <script src="js/bootstrap.min.js"></script>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+  <script src="js/util.js"></script>
+  <style>
+  .article {
+	width: 100%;
+	height: 400px;
+    border: 1px solid gray;
+    resize: none;
+    border-radius: 5px;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+	overflow: auto;
+  }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1><span style="font-family: 'cursive';" >New Post</span></h1>
+    <button id="home" class="btn btn-default">
+	  <span class="glyphicon glyphicon-chevron-left"></span> Home
+	</button>
+    <button id="create" class="btn btn-default">
+	  <span class="glyphicon glyphicon-floppy-disk"></span> Submit
+	</button>
+  </div>
+  <div class="row">
+  <div class="form-group col-xs-12">
+    <input type="text" id="title" class="form-control" style="text-align: center;" placeholder="Post Title">
+  </div>
+  </div>
+  <form id="upload" method="post" enctype="multipart/form-data" action="/upload" role="form">
+  
+	<div class="row">
+		<div class="form-group col-xs-6">
+		  <input type="password" id="key" name="key" class="form-control" style="text-align: center;" placeholder="Pass Key">
+		</div>
+		<div class="form-group col-xs-6">
+		  <input type="text" id="date" name="date" class="form-control" style="text-align: center;" readOnly>
+		</div>
+	</div>
+    <div class="form-group">
+      <button onclick="$('#file').click();return false;" class="btn btn-default" style="width: 10%;">
+	    <span class="glyphicon glyphicon-folder-open"></span> Browse
+	  </button>
+      <input id="file" name="file" type="file" onchange="$('#filepath').val($('#file').val());" style="display: none;">
+      <input readonly id="filepath" type="text" style="width: 79%;">
+      <button onclick="$('#upload').submit();return false;" class="btn btn-default" style="width: 10%;">
+	    <span class="glyphicon glyphicon-cloud-upload"></span> Upload
+	  </button>
+    </div>
+  </form>
+  <div class="row">
+	<div class="col-xs-6">
+        <textarea id="content" class="article" style="margin-top: 1px;" placeholder="Content"></textarea>
+    </div>
+	<div class="col-xs-6">
+       <div id="view" class="article" readOnly>Preview</div>
+    </div>
+  </div>
+  <iframe id="target" name="target" src="" style="width: 0; height: 0; border: 0px solid #fff;"></iframe>
+</div>
+<script>
+  function GetDate() {
+    var date = new Date();
+    var year = "" + date.getFullYear();
+    var month = "" + (date.getMonth() + 1);
+    var day = "" + date.getDate();
+    var hour = "" + date.getHours();
+    var minute = "" + date.getMinutes();
+    var second = "" + date.getSeconds();
+    if (month.length < 2)
+      month = "0" + month;
+    if (day.length < 2)
+      day = "0" + day;
+    if (hour.length < 2)
+      hour = "0" + hour;
+    if (minute.length < 2)
+      minute = "0" + minute;
+    if (second.length < 2)
+      second = "0" + second;
+    return year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
+  }
+  
+  $("#create").click(function () {
+    var title = $("#title").val().trim();
+    var date = $("#date").val().trim();
+    var key = $("#key").val().trim();
+    var content = $("#content").val().trim();
+    console.log(title);
+    if (title == "") {
+      Alert("title can't be empty!");
+      return;
+    }
+    if (date == "") {
+      Alert("date can't be empty!");
+      return;
+    }
+    if (key == "") {
+      Alert("key can't be empty!");
+      return;
+    }
+    if (content == "") {
+      Alert("content can't be empty!");
+      return;
+    }
+    var data = {};
+    data.title = title;
+    data.date = date;
+    data.key = key;
+    data.content = content;
+    $.post("/new", data, function (ret) {
+      if (ret.info == "ok") {
+        Confirm("Post create successful, press YES to return home", function (yes) {
+          if(yes) window.location.href = "/";
+        });
+      } else {
+        Alert(ret.info);
+      }
+    }, "json").fail(function () {
+      Alert("error!");
+    });
+  });
+  
+  $(document).ready(function () {
+    $("#date").val(GetDate());
+    $("#home").click(function () {
+      if ($("#content").val() != "") {
+        Confirm("There is something you already input, are you sure back home at once?", function (yes) {
+          if (yes) {
+            window.location.href='/';
+          }
+        });
+      } else {
+        window.location.href='/';
+      }
+      return false;
+    });
+    
+    $("#content").on("keyup", function () {
+      $("#view").html(markdown.toHTML($("#content").val()));
+      var ret = MathJax.Hub.Queue(["Typeset", MathJax.Hub, "view"]);
+    });
+	
+	function scroll() {
+		var c = $("#content")[0];
+		var v = $("#view")[0];
+		v.scrollTop = v.scrollHeight * (c.scrollTop / c.scrollHeight);
+	}
+	
+	$("#content").on("scroll", scroll);
+	$("#content").on("keyup", scroll);
+    
+    // Run when file uploaded
+    $("#target").load(function () {
+      var pre = frames["target"].document.getElementsByTagName("pre")[0];
+      if (pre) {
+        var ret = pre.innerHTML;
+        pre.innerHTML = "";
+        ret = JSON.parse(ret);
+        if (ret.info == "ok") {
+          var c = "[" + ret.name + "](" + ret.path + ")"
+          
+          if (ret.name.indexOf(".") != -1) {
+            var image = [".jpg", ".jpeg", ".gif", ".png"];
+            var ext = ret.name.substr(ret.name.lastIndexOf("."));
+            if (image.indexOf(ext) != -1)
+              c = "!" + c;
+          }
+          
+          $("#content").val($("#content").val() + "\n" + c + "\n");
+          $('#filepath').val("");
+          $('#file').val("");
+          
+          $("#view").html(markdown.toHTML($("#content").val()));
+          MathJax.Hub.Queue(["Typeset", MathJax.Hub, "view"]);
+        } else {
+          Alert(ret.info);
+        }
+      }
+    });
+    
+    $("#upload").submit(function () {
+      var files = $("#file")[0];
+      if (!files.files || files.files.length <= 0 || files.files[0].size <= 0) {
+        Alert("please choose a valid file!");
+        return false;
+      }
+      $("#upload")[0].target = "target";
+      var date = $("#date").val().trim();
+      var key = $("#key").val().trim();
+      if (date == "") {
+        Alert("date can't be empty!");
+        return false;
+      }
+      if (key == "") {
+        Alert("key can't be empty!");
+        return false;
+      }
+    });
+  });
+</script>
+</body>
+</html>
