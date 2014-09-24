@@ -1,0 +1,192 @@
+
+.ace_strong {
+  font-weight: bold;
+}
+
+.ace_emphasis {
+  font-style: italic;
+}
+
+#wmd-button-bar {
+  display: none;
+}
+
+#DeditorToolbar {
+  margin-top: 10px;
+  background-color: #F7F7F7;
+  border: 1px solid #ccc;
+  border-bottom: 0;
+}
+
+#DeditorPreview {
+  margin: 0;
+  padding: 0;
+}
+
+.wmd-preview {
+  min-height: 20px;
+  max-height: 220px;
+  background-color: #f7f7f7;
+  font-family: "Monaco","Menlo","Ubuntu Mono","Consolas","source-code-pro",monospace;
+  font-size: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  word-break: break-all;
+  padding: 0 5px;
+  border: 1px solid #CCC;
+  border-bottom: 0;
+}
+
+#DeditorInput {
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+
+.wmd-input {
+  min-height: 220px;
+  max-height: 220px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #CCC;
+  border-top: 0;
+}
+
+.ace_content {
+  background-color: #fcfcfc;
+}
+
+@media (min-width: 992px) {
+  .wmd-toolbar {
+    margin-top: 10px;
+    min-height: 37px;
+    background-color: #F7F7F7;
+    border: 1px solid #ccc;
+  border-bottom: 0;
+  }
+  
+  #DeditorPreview {
+    float: right;
+  }
+
+  .wmd-preview {
+    min-height: 400px;
+    max-height: 400px;
+    border: 1px solid #CCC;
+    border-left: 0;
+  }
+  
+  .wmd-input {
+    min-height: 400px;
+    max-height: 400px;
+    border: 1px solid #CCC;
+    border-right: 0;
+  }
+}
+
+.wmd-prompt-dialog
+{
+	border: 1px solid #999999;
+	background-color: #F5F5F5;
+}
+
+.wmd-prompt-dialog > div {
+	font-size: 0.8em;
+	font-family: arial, helvetica, sans-serif;
+}
+
+
+
+/* for topic & preview */
+
+
+
+.topic-content textarea {
+  display: none;
+}
+
+.topic-content h1,
+.wmd-preview h1 {
+  font-size: 24px;
+  font-weight:bold;
+}
+
+.topic-content h2,
+.wmd-preview h2 {
+  font-size: 22px;
+  font-weight:bold;
+}
+
+.topic-content h3,
+.wmd-preview h3 {
+  font-size: 20px;
+  font-weight:bold;
+}
+
+.topic-content h4,
+.wmd-preview h4 {
+  font-size: 18px;
+  font-weight:bold;
+}
+
+.topic-content h5,
+.wmd-preview h5 {
+  font-size: 16px;
+  font-weight:bold;
+}
+
+.topic-content h6,
+.wmd-preview h6 {
+  font-size: 14px;
+  font-weight:bold;
+}
+
+.topic-content p,
+.wmd-preview p {
+  font-weight: normal;
+  line-height: 1.7;
+  font-size: 14px;
+  margin-bottom: 12px;
+  margin-top: 0;
+}
+
+.topic-content li,
+.wmd-preview li {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.topic-content hr,
+.wmd-preview hr {
+  margin: 4px 1px;
+}
+
+.topic-content blockquote,
+.wmd-preview blockquote {
+  background-color: #f9f9f9;
+  border-left: 8px solid #ccc;
+  margin: 0.5em 10px;
+}
+
+.topic-content table,
+.wmd-preview table {
+  width: 95%;
+  empty-cells:show;
+  border-collapse: collapse; 
+  margin: 10px auto;
+  border: 1px solid #ccc;
+}
+
+.topic-content td,
+.topic-content th,
+.wmd-preview td,
+.wmd-preview th {
+  border: 1px solid #ccc;
+  padding: 0.4em 1em;
+}
+
+.topic-content th,
+.wmd-preview th {
+  background-color: #f0f0f0;
+}
+
