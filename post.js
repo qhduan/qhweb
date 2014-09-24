@@ -1,10 +1,11 @@
 var fs = require("fs");
 var util = require("util");
+var config = require("config")
 var tool = require("./tool");
 
 var CurrentList = [];
 function LoadPosts () {
-	var dir = __dirname + "/public/posts";
+	var dir = __dirname + "/database/posts";
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir);
 	}
@@ -24,7 +25,7 @@ function LoadPosts () {
 					var data = fs.readFileSync(f, {encoding: "utf-8"});
 					var header = data.substr(0, data.indexOf("---"));
 					var elem = {};
-					elem.path = f.match(/\/public([^\0]+)$/);
+					elem.path = f.match(/\/database([^\0]+)$/);
 					elem.title = header.match(/title:\ ([^\0\n]+)\n/);
 					elem.date = header.match(/date:\ ([^\0\n]+)\n/);
 					if (!elem.path || !elem.title || !elem.date) {
@@ -50,7 +51,7 @@ function LoadPosts () {
 }
 
 function LoadArticles () {
-	var dir = __dirname + "/public/articles";
+	var dir = __dirname + "/database/articles";
 	if (!fs.existsSync(dir)) {
 		fs.mkdirSync(dir);
 	}
@@ -63,7 +64,7 @@ function LoadArticles () {
         var data = fs.readFileSync(f, {encoding: "utf-8"});
         var header = data.substr(0, data.indexOf("---"));
         var elem = {};
-        elem.path = f.match(/\/public([^\0]+)$/);
+        elem.path = f.match(/\/database([^\0]+)$/);
         elem.title = header.match(/title:\ ([^\0\n]+)\n/);
         elem.date = header.match(/date:\ ([^\0\n]+)\n/);
         if (!elem.path || !elem.title || !elem.date) {
@@ -127,7 +128,7 @@ function CreatePost (req, res, callback) {
   var year = d[1];
   var month = d[2];
   
-  if (key != tool.config.key) {
+  if (key != config.get("qhweb.key")) {
     res.json({info: "key don't match!"});
     return;
   }
@@ -138,19 +139,19 @@ function CreatePost (req, res, callback) {
     return;
   }
   
-  var path = util.format(__dirname + "/public/posts/%s/%s/%s.md", year, month, filename);
+  var path = util.format(__dirname + "/database/posts/%s/%s/%s.md", year, month, filename);
   
   if (fs.existsSync(path)) {
     res.json({info: "file conflict!"});
     return;
   }
   
-  if (!fs.existsSync(util.format(__dirname + "/public/posts/%s", year))) {
-    fs.mkdirSync(util.format(__dirname + "/public/posts/%s", year));
+  if (!fs.existsSync(util.format(__dirname + "/database/posts/%s", year))) {
+    fs.mkdirSync(util.format(__dirname + "/database/posts/%s", year));
   }
   
-  if (!fs.existsSync(util.format(__dirname + "/public/posts/%s/%s", year, month))) {
-    fs.mkdirSync(util.format(__dirname + "/public/posts/%s/%s", year, month));
+  if (!fs.existsSync(util.format(__dirname + "/database/posts/%s/%s", year, month))) {
+    fs.mkdirSync(util.format(__dirname + "/database/posts/%s/%s", year, month));
   }
   
   fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s", title, date, content), {encoding: "utf-8"}, function (err) {
@@ -166,19 +167,19 @@ function GetPage (num) {
   if (list.length == 0)
     return [];
   
-  var max_page = Math.ceil(list.length / tool.config.post_per_page);
+  var max_page = Math.ceil(list.length / config.get("qhweb.post_per_page"));
   if (num < 0 || num >= max_page)
     return undefined;
   
-  var begin = num * tool.config.post_per_page;
-  var end = begin + tool.config.post_per_page;
+  var begin = num * config.get("qhweb.post_per_page");
+  var end = begin + config.get("qhweb.post_per_page");
   end = Math.min(end, list.length);
   return list.slice(begin, end);
 }
 
 
 function GenerateJson () {
-	var path = __dirname + "/public/json";
+	var path = __dirname + "/database/json";
   
 	if (!fs.existsSync(path)) {
 		fs.mkdirSync(path);
@@ -193,10 +194,10 @@ function GenerateJson () {
 	
 	// main.json
 	var data = {};
-	data.name = tool.config.site_name;
-	data.subtitle = tool.config.site_subtitle;
-	data.url = tool.config.url;
-	data.maxpage = Math.ceil(CurrentList.length / tool.config.post_per_page);
+	data.name = config.get("qhweb.site_name");
+	data.subtitle = config.get("qhweb.site_subtitle");
+	data.url = config.get("qhweb.url");
+	data.maxpage = Math.ceil(CurrentList.length / config.get("qhweb.post_per_page"));
   data.articles = LoadArticles();
 	fs.writeFileSync(path + "/main.json", JSON.stringify(data), {encoding: "utf-8"});
 	

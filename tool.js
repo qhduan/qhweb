@@ -1,12 +1,7 @@
 var fs = require("fs");
 var util = require("util");
+var config = require("config")
 
-var config = JSON.parse(fs.readFileSync(__dirname + "/config.json", {encoding: "utf-8"}));
-
-fs.watch(__dirname + "/config.json", { persistent: true }, function () {
-	config = JSON.parse(fs.readFileSync(__dirname + "/config.json", {encoding: "utf-8"}));
-	console.log("config reloaded");
-});
 
 // Convert a name to a valid filename
 function GetValidName (oname) {
@@ -30,28 +25,32 @@ function Upload(req, res) {
   var date = req.body.date;
   var file = req.files.file;
   var name = file.originalFilename;
+  
+  function Good(str) {
+    res.write(util.format("<script>parent.callback(\"success\", \"%s\")</script>", str));
+    res.end();
+  }
+  
+  function Wrong(str) {
+    res.write(util.format("<script>parent.callback(\"error\", \"%s\")</script>", str));
+    res.end();
+    fs.unlink(file.path, function (err) {
+      if (err) throw err;      
+    });
+  }
     
   if (!key || key.trim() == "") {
-    res.json({info: "key can't be empty!"});
-    fs.unlink(file.path, function (err) {
-    if(err) throw err;
-  });
+    Wrong("key can't be empty!");
     return;
   }
   
   if (!date || date.trim() == "") {
-    res.json({info: "date can't be empty!"});
-    fs.unlink(file.path, function (err) {
-    if(err) throw err;
-  });
+    Wrong("date can't be empty!");
     return;
   }
   
   if (!name || name.trim() == "") {
-    res.json({info: "name can't be empty!"});
-    fs.unlink(file.path, function (err) {
-    if(err) throw err;
-  });
+    Wrong("file name error!");
     return;
   }
   
@@ -61,62 +60,49 @@ function Upload(req, res) {
 
   var d = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
   if (!d) {
-    res.json({info: "date invalid!"});
-    fs.unlink(file.path, function (err) {
-    if(err) throw err;
-  });
+    Wrong("data invalid!");
     return;
   }
   
   var year = d[1];
   var month = d[2];
   
-  if (key != config.key) {
-    res.json({info: "key don't match!"});
-    fs.unlink(file.path, function (err) {
-    if(err) throw err;
-  });
+  if (key != config.get("qhweb.key")) {
+    Wrong("key don't match!");
     return;
   }
   
   var filename = GetValidName(name);
   if (filename == "") {
-  res.json({info: "filename invalid!"});
-    fs.unlink(file.path, function (err) {
-    if(err) throw err;
-  });
-  return;
-  }
-  
-  var path = util.format(__dirname + "/public/uploads/%s/%s/%s", year, month, filename);
-  
-  if (fs.existsSync(path)) {
-    res.json({info: "file conflict!"});
-      fs.unlink(file.path, function (err) {
-      if(err) throw err;
-    });
+    Wrong("file name invalid!");
     return;
   }
   
-  if (!fs.existsSync(__dirname + "/public/uploads")) {
-    fs.mkdirSync(__dirname + "/public/uploads");
+  var path = util.format(__dirname + "/database/uploads/%s/%s/%s", year, month, filename);
+  
+  if (fs.existsSync(path)) {
+    Wrong("file conflict!");
+    return;
   }
   
-  if (!fs.existsSync(util.format(__dirname + "/public/uploads/%s", year))) {
-    fs.mkdirSync(util.format(__dirname + "/public/uploads/%s", year));
+  if (!fs.existsSync(__dirname + "/database/uploads")) {
+    fs.mkdirSync(__dirname + "/database/uploads");
   }
   
-  if (!fs.existsSync(util.format(__dirname + "/public/uploads/%s/%s", year, month))) {
-    fs.mkdirSync(util.format(__dirname + "/public/uploads/%s/%s", year, month));
+  if (!fs.existsSync(util.format(__dirname + "/database/uploads/%s", year))) {
+    fs.mkdirSync(util.format(__dirname + "/database/uploads/%s", year));
+  }
+  
+  if (!fs.existsSync(util.format(__dirname + "/database/uploads/%s/%s", year, month))) {
+    fs.mkdirSync(util.format(__dirname + "/database/uploads/%s/%s", year, month));
   }
   
   fs.rename(file.path, path, function (err) {
     if (err) throw err;
-    res.json({info: "ok", name: file.originalFilename, path: path.match(/\/uploads\/[^\0]+$/)[0]});
+    var url = path.match(/\/uploads\/.+$/)[0];
+    Good(url);
   });
 }
 
-
-exports.config = config;
 exports.upload = Upload;
 exports.GetValidName = GetValidName;
