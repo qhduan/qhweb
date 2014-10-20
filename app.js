@@ -14,12 +14,13 @@ app.use(bodyParser.json());
 app.use(compression());
 
 app.get("/", function (req, res) {
-  res.sendfile(__dirname + "/public/index.html");
+  res.sendFile(__dirname + "/public/index.html");
 });
 
 app.get("/regen", function (req, res) {
   post.load();
   post.generate();
+  console.log(config.get("qhweb.site_name"));
   res.redirect("/");
 });
 
