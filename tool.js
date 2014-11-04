@@ -104,5 +104,15 @@ function Upload(req, res) {
   });
 }
 
+function GetConfig (req, res) {
+  res.json({
+    siteName: config.get("qhweb.siteName"),
+    siteSubtitle: config.get("qhweb.siteSubtitle"),
+    itemOfPage: config.get("qhweb.itemOfPage"),
+    url: config.get("qhweb.url")
+  });
+}
+
+exports.config = GetConfig;
 exports.upload = Upload;
 exports.GetValidName = GetValidName;

@@ -3,12 +3,11 @@ var util = require("util");
 var config = require("config")
 var tool = require("./tool");
 
-var CurrentList = [];
-function LoadPosts () {
-	var dir = __dirname + "/database/posts";
-	if (!fs.existsSync(dir)) {
-		fs.mkdirSync(dir);
-	}
+var Posts = [];
+var Articles = [];
+
+function LoadMarkdown (dir) {
+	//var dir = __dirname + "/database/posts";
 	if (fs.statSync(dir).isDirectory()) {
 		var result = [];
 		var list = [];
@@ -23,18 +22,30 @@ function LoadPosts () {
 					list.push(f);
 				} else if (fs.statSync(f).isFile() && f.match(/.md$/)) {
 					var data = fs.readFileSync(f, {encoding: "utf-8"});
-					var header = data.substr(0, data.indexOf("---"));
+          
+          var s = "---";
+          var pos = data.indexOf(s);
+          
+					if (pos == -1) {
+					  console.log(f);
+					  throw "file have not splitor";
+					}
+          
+					var header = data.substr(0, pos);
+          var content = data.substr(pos + s.length).trim();
+          
 					var elem = {};
 					elem.path = f.match(/\/database([^\0]+)$/);
 					elem.title = header.match(/title:\ ([^\0\n]+)\n/);
 					elem.date = header.match(/date:\ ([^\0\n]+)\n/);
 					if (!elem.path || !elem.title || !elem.date) {
-					  console.log(elem);
-					  throw "A post can't be parsed";
+					  console.log(f);
+					  throw "file can't be parsed";
 					}
 					elem.path = elem.path[1];
 					elem.title = elem.title[1];
 					elem.date = elem.date[1];
+          elem.content = content;
 					result.push(elem)
 				}
 			}
@@ -44,42 +55,9 @@ function LoadPosts () {
 		  b = new Date(b.date);
 		  return b.getTime() - a.getTime();
 		});
-		CurrentList = result;
+    return result;
 	} else {
-		throw "Fail to load posts";
-	}
-}
-
-function LoadArticles () {
-	var dir = __dirname + "/database/articles";
-	if (!fs.existsSync(dir)) {
-		fs.mkdirSync(dir);
-	}
-	if (fs.statSync(dir).isDirectory()) {
-    var l = fs.readdirSync(dir);
-    var articles = [];
-    for (var i = 0; i < l.length; i++) {
-      var f = dir + "/" + l[i];
-      if (fs.statSync(f).isFile() && f.match(/.md$/)) {
-        var data = fs.readFileSync(f, {encoding: "utf-8"});
-        var header = data.substr(0, data.indexOf("---"));
-        var elem = {};
-        elem.path = f.match(/\/database([^\0]+)$/);
-        elem.title = header.match(/title:\ ([^\0\n]+)\n/);
-        elem.date = header.match(/date:\ ([^\0\n]+)\n/);
-        if (!elem.path || !elem.title || !elem.date) {
-          console.log(elem);
-          throw "An article can't be parsed";
-        }
-        elem.path = elem.path[1];
-        elem.title = elem.title[1];
-        elem.date = elem.date[1];
-        articles.push(elem);
-      }
-    }
-    return articles;
-  } else {
-		throw "Fail to load posts";
+		throw "fail to load dir";
 	}
 }
 
@@ -90,23 +68,19 @@ function CreatePost (req, res, callback) {
   var content = req.body.content;
   
   if (!title || title.trim() == "") {
-    res.json({info: "title can't be empty!"});
-    return;
+    return res.json({message: "title can't be empty!"});
   }
   
   if (!date || date.trim() == "") {
-    res.json({info: "date can't be empty!"});
-    return;
+    return res.json({message: "date can't be empty!"});
   }
   
   if (!key || key.trim() == "") {
-    res.json({info: "key can't be empty!"});
-    return;
+    return res.json({message: "key can't be empty!"});
   }
   
   if (!content || content.trim() == "") {
-    res.json({info: "content can't be empty!"});
-    return;
+    return res.json({message: "content can't be empty!"});
   }
   
   title = title.trim();
@@ -114,36 +88,37 @@ function CreatePost (req, res, callback) {
   key = key.trim();
   content = content.trim();
   
-  if (CurrentList.indexOf(title) != -1) {
-    res.json({info: "title conflict"});
-    return;
+  for (var i = 0; i < Posts.length; i++) {
+    if (Posts[i].title == title)
+      return res.json({message: "title conflict post"});
+  }
+  
+  for (var i = 0; i < Articles.length; i++) {
+    if (Articles[i].title == title)
+      return res.json({message: "title conflict article"});
   }
 
   var d = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
   if (!d) {
-    res.json({info: "date invalid!"});
-    return;
+    return res.json({message: "date invalid!"});
   }
   
   var year = d[1];
   var month = d[2];
   
   if (key != config.get("qhweb.key")) {
-    res.json({info: "key don't match!"});
-    return;
+    return res.json({message: "key don't match!"});
   }
   
   var filename = tool.GetValidName(title);
   if (filename == "") {
-    res.json({info: "filename invalid!"});
-    return;
+    return res.json({message: "filename invalid!"});
   }
   
   var path = util.format(__dirname + "/database/posts/%s/%s/%s.md", year, month, filename);
   
   if (fs.existsSync(path)) {
-    res.json({info: "file conflict!"});
-    return;
+    return res.json({message: "file conflict!"});
   }
   
   if (!fs.existsSync(util.format(__dirname + "/database/posts/%s", year))) {
@@ -156,59 +131,65 @@ function CreatePost (req, res, callback) {
   
   fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s", title, date, content), {encoding: "utf-8"}, function (err) {
     if(err) throw err;
-    res.json({info: "ok"});
-    if (callback) callback();
+    Posts.unshift({
+      title: title,
+      path: path,
+      content: content,
+      date: date
+    });
+    res.json({success: "ok"});
   });
 }
 
 
-function GetPage (num) {
-  var list = CurrentList;
-  if (list.length == 0)
-    return [];
+function GetPage (req, res) {
+  var start = parseInt(req.param("start"));
+  var number = parseInt(req.param("number"));
   
-  var max_page = Math.ceil(list.length / config.get("qhweb.post_per_page"));
-  if (num < 0 || num >= max_page)
-    return undefined;
+  if (isNaN(start) || isNaN(number) || start < 0 || number <= 0) {
+    return res.json({message: "invalid arguments"});
+  }  
   
-  var begin = num * config.get("qhweb.post_per_page");
-  var end = begin + config.get("qhweb.post_per_page");
-  end = Math.min(end, list.length);
-  return list.slice(begin, end);
+  var result = {};
+  result.posts = Posts.slice(start, start + number);
+  result.count = Posts.length;
+  return res.json(result);
 }
 
+function GetArticles (req, res) {
+  var result= {};
+  result.articles = Articles;
+  result.count = Articles.length;
+  return res.json(result);
+}
 
-function GenerateJson () {
-	var path = __dirname + "/database/json";
+function GetContent (req, res) {
+  var title = req.param("title");
+  var type = req.param("type");
   
-	if (!fs.existsSync(path)) {
-		fs.mkdirSync(path);
+  if (typeof title != "string" || title.trim().length <= 0 || (type != "post" && type != "article")) {
+    return res.json({message: "invalid arguments"});
   }
-		
-	var files = fs.readdirSync(path);
-	if (files.length > 0) {
-		for (var i in files) {
-			fs.unlinkSync(path + "/" + files[i]);
-		}
-	}
-	
-	// main.json
-	var data = {};
-	data.name = config.get("qhweb.site_name");
-	data.subtitle = config.get("qhweb.site_subtitle");
-	data.url = config.get("qhweb.url");
-	data.maxpage = Math.ceil(CurrentList.length / config.get("qhweb.post_per_page"));
-  data.articles = LoadArticles();
-	fs.writeFileSync(path + "/main.json", JSON.stringify(data), {encoding: "utf-8"});
-	
-  // pageX.json
-	for (var i = 0; i < data.maxpage; i++) {
-		fs.writeFileSync(path + "/page" + (i + 1) + ".json", JSON.stringify(GetPage(i)), {encoding: "utf-8"});
-	}
-	
-	console.log("Generate", data.maxpage, "+ 1 json");
+  
+  if (type == "post") {
+    for (var i = 0; i < Posts.length; i++) {
+      if (title == Posts[i].title)
+        return res.json(Posts[i]);
+    }
+    return res.json({message: "post not found"});
+  } else { // type == "article"
+    for (var i = 0; i < Articles.length; i++) {
+      if (title == Articles[i].title)
+        return res.json(Articles[i]);
+    }
+    return res.json({message: "article not found"});
+  }
 }
 
+Posts = LoadMarkdown(__dirname + "/database/posts");
+Articles = LoadMarkdown(__dirname + "/database/articles");
+
+exports.article = GetArticles;
+exports.page = GetPage;
 exports.create = CreatePost;
-exports.generate = GenerateJson;
-exports.load = LoadPosts;
+exports.content = GetContent;

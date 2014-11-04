@@ -17,26 +17,21 @@ app.get("/", function (req, res) {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-app.get("/regen", function (req, res) {
-  post.load();
-  post.generate();
-  console.log(config.get("qhweb.site_name"));
-  res.redirect("/");
+app.post("/new", function (req, res) {
+  post.create(req, res);
 });
 
-app.post("/new", function (req, res) {
-  post.create(req, res, function () {
-    post.load();
-    post.generate()
-  });
-});
+app.get("/page", post.page);
+app.get("/article", post.article);
+app.get("/content", post.content);
+app.get("/config", tool.config);
 
 app.post('/upload', multipart(), tool.upload);
 
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/database"));
 
-post.load();
-post.generate();
-app.listen(config.get("qhweb.port"));
-console.log("QHWeb is running on port", config.get("qhweb.port"));
+app.listen(config.get("qhweb.port"), function () {
+  console.log("QHWeb is running on port", config.get("qhweb.port"));
+});
+
