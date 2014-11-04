@@ -1,9 +1,9 @@
 {
   "qhweb": {
-    "site_name": "QHD's Site",
+    "siteName": "QHD's site",
     "url": "http://qhduan.com/",
-    "site_subtitle": "write my life",
-    "post_per_page": 12,
+    "siteSubtitle": "write my life",
+    "itemOfPage": 12,
     "key": "sweethome",
     "port": 3000
   }
