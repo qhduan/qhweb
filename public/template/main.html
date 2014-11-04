@@ -1,0 +1,45 @@
+<div class="page-header">
+  <h1>
+    <span style="font-family: 'cursive';" >{{ title }}</span>
+    <span style="padding-left: 150px;"></span>
+    <small class="pull-right" style="font-family: 'cursive'; padding-top: 25px;">{{ subtitle }}</small>
+  </h1>
+</div>
+<div class="">
+  <a ng-repeat="article in articles" class='btn' href="#/show?type=article&title={{ encodeURIComponent(article.title) }}">
+    {{ article.title }}
+  </a>
+</div>
+<div class="list-group">
+  <a ng-repeat="post in posts" class='list-group-item' href="#/show?type=post&title={{ encodeURIComponent(post.title) }}">
+    {{ post.title }}
+  </a>
+</div>
+</div>
+<div id="div-btn" class="container">
+  <div class="row">
+    <div class="col-sm-3 col-xs-12" style="padding-top: 6px;">
+      <label>{{ info }}</label>
+    </div>
+    <div class="col-sm-2 col-xs-6">
+      <a class="btn btn-default" href="#/main">
+        <span class=" glyphicon glyphicon-home"></span> First Page
+      </a>
+    </div>
+    <div class="col-sm-2 col-xs-6">
+      <a id="btn-prev" class="btn btn-default" href="#main?page={{ page == 0 ? 0 : page - 1 }}">
+        <span class="glyphicon glyphicon-arrow-left"></span> Prev Page
+      </a>
+    </div>
+    <div class="col-sm-2 col-xs-6">
+      <a id="btn-next" class="btn btn-default" href="#main?page={{ page + 1 }}">
+        Next Page <span class="glyphicon glyphicon-arrow-right"></span>
+      </a>
+    </div>
+    <div class="col-sm-2 col-xs-6">
+      <a class="btn btn-default" href="#/new">
+        <span class="glyphicon glyphicon-plus"></span> New Post
+      </a>
+    </div>
+  </div>
+</div>

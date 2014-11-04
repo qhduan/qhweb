@@ -92,6 +92,29 @@
     var elements = [];
     var anchors = [];
     
+    if (typeof window.ProcessTocTempDom == "undefined") {
+      window.ProcessTocTempDom = document.createElement("div");
+    }
+    ProcessTocTempDom = window.ProcessTocTempDom;
+    ProcessTocTempDom.innerHTML = html;
+    var nodeList = ProcessTocTempDom.querySelectorAll("h1,h2,h3,h4,h5,h6,h7");
+    
+    if (!nodeList.length) {
+      return html;
+    }
+    
+    for (var i = 0; i < nodeList.length; i++) {
+      var node = nodeList[i];
+      var tag = node.tagName;
+      var text = node.innerHTML;
+      var anchor = "anchor_" + utf8_to_b64(text + "" + i);
+      node.innerHTML += "<span id='" + anchor + "' style='z-index: -9999; margin-top: -60px; padding-bottom: 60px; display: block; float: right;'>&nbsp;</span>";
+      elements.push({tag: tag, text: text, anchor: anchor});
+    }
+    
+    html = ProcessTocTempDom.innerHTML;
+    
+    /*
     html = html.replace(/<h1[^<]+<\/h1>|<h2[^<]+<\/h2>|<h3[^<]+<\/h3>|<h4[^<]+<\/h4>|<h5[^<]+<\/h5>|<h6[^<]+<\/h6>/g, function (m) {
       var mm = m.match(/<(h[1-6]{1})[^>]*>([^<]+)</);
       var tag = mm[1];
@@ -105,6 +128,7 @@
     if (!elements.length) {
       return html;
     }
+    */
     
     function GenerateTree(array) {
       var root = [];

@@ -417,12 +417,11 @@
       
       var uploadTimer = null;
       var count = 0;
-      var uploader = null;
               
       //从服务器获取token
-      $.ajax({url: "/upload/token", success: function (data) {
+      $.ajax({url: "/upload/token", dataType: "json", cache: false, success: function (data) {
         
-        Qiniu.uploader({
+        window.QiniuUploader = Qiniu.uploader({
           runtimes: "html5", //调用方法排序，html5优先
           browse_button: document.getElementById("EditorUpload"), //绑定的按钮
           uptoken: data.uptoken, //从服务器返回的json中的uptoken
@@ -442,12 +441,7 @@
             ]
           },
           init: {
-            "BeforeUpload": function (up, file) {
-              if (!uploader) {
-                uploader = up;
-                window.qiniu_uploader = up;
-              }
-              
+            "BeforeUpload": function (up, file) {              
               if (uploadTimer !== null) {
                 clearInterval(uploadTimer);
                 uploadTimer = null;
@@ -525,12 +519,7 @@
             }
           }
         });
-      }, dataType: "json", cache: false}).fail(function () {
-        $("#wmd-upload-button").on("click", function () {
-          alert("获取上传权限失败，无法上传");
-        });
-        console.log("获取上传权限", arguments);
-      });
+      }});
       
     }
     
@@ -1064,6 +1053,8 @@
     }
     
   }
+  
+  window.LoadEditor = LoadEditor;
 
   // 开始加载编辑器
   LoadEditor();

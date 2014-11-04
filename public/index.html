@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" ng-app="qhweb">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -8,157 +8,30 @@
   <meta name="author" content="longinus">
   <link rel="shortcut icon" href="icon.png" type="image/png">
   <link rel="icon" href="icon.gif" type="image/gif">
-  <title></title>
-  <script src="js/jquery-2.1.1.min.js"></script>
-  <script src="js/bootstrap.min.js"></script>
+  
+  <title> QHD Blog </title>
+  
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="css/alertify.core.css">
+  <link rel="stylesheet" href="css/alertify.bootstrap.css">
+  <link rel="stylesheet" href="css/app.css">
+  
+  <script src="js/jquery-2.1.1.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+  
+  <script src="js/angular.min.js"></script>
+  <script src="js/angular-route.min.js"></script>
+  <script src="js/alertify.min.js"></script>
+  
   <script src="js/util.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/controllers.js"></script>
+  <script src="js/editor.js"></script>
 </head>
 <body>
   <div class="container">
-    <div class="page-header">
-      <h1><span id="title" style="font-family: 'cursive';" ></span><span style="padding-left: 150px;"></span><small id="subtitle" class="pull-right" style="font-family: 'cursive'; padding-top: 25px;"></small></h1>
-    </div>
-    <div id="div-articles" class="page-header" style="margin-top: -10px; display: none;"></div>
-    <div id="list" class="list-group" style="min-height: 200px; margin-left: -40px;"></div>
-    </div>
-    <div id="div-btn" class="container" style="display: none;">
-      <div class="row">
-        <div class="col-sm-3 col-xs-12" style="padding-left: 70px; padding-top: 6px;">
-              <label id="pageinfo"></label>
-        </div>
-        <div class="col-sm-2 col-xs-6">
-              <a class="btn btn-default" href="/">
-             <span class=" glyphicon glyphicon-home"></span> First Page
-              </a>
-        </div>
-        <div class="col-sm-2 col-xs-6">
-              <a id="btn-prev" class="btn btn-default" href="#">
-              <span class="glyphicon glyphicon-arrow-left"></span> Prev Page
-              </a>
-        </div>
-        <div class="col-sm-2 col-xs-6">
-            <a id="btn-next" class="btn btn-default" href="#">
-              Next Page <span class="glyphicon glyphicon-arrow-right"></span>
-            </a>
-        </div>
-        <div class="col-sm-2 col-xs-6">
-            <a class="btn btn-default" href="new.html">
-              <span class="glyphicon glyphicon-plus"></span> New Post
-            </a>
-        </div>
-      </div>
-    </div>
+    <div ng-view></div>
   </div>
-<script>
-  var index_list = {};
-  var current = 1;
-  var maxpage;
-  
-  function ShowPage (num, callback) {
-    var result = "";
-    for (var i = 0; i < index_list[num].length; i++) {
-      var data = index_list[num][i];
-      var date = data.date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
-      var line = "<a class='list-group-item' href=\"post.html?" + current + "-" + 
-        Encode(data.path) + "\" ><span>" + data.title +
-        " <small style='float: right;'>(" + date[1] + "-" + date[2] + ")</small></span></a>\n";
-      result += line;
-    }
-    if (result != "") {
-      result = "<ul>\n" + result + "</ul>";
-      document.getElementById("list").innerHTML = result;
-    }
-    
-    document.getElementById("pageinfo").innerHTML = num + " / " + maxpage;
-    
-    if (callback) callback();
-  }
-  
-  function GetPage(num, callback) {
-    if (num < 0 || num > maxpage)
-      return;
-    if (index_list[num]) {
-      if (callback) callback();
-    } else {
-      $.get("/json/page" + num + ".json", function (data) {
-        if (data.length == 0) {
-          $("#list").html("load page error");
-        } else {
-          index_list[num] = data;
-          if (callback) callback();
-        }
-      }, "json").fail(function () {
-        $("#list").html("load page error");
-      });
-    }
-  }
-  
-  $(document).ready(function () {
-    var p = document.URL.match(/\/\?([0-9]+)$/);
-    if (p) {
-      p = p[1];
-      p = parseInt(p);
-      if (p > 0) {
-        current = p;
-      }
-    }
-    
-    $.get("/json/main.json", function (data) {
-      document.title = data.name;
-      $("#title").html("<a href='" + data.url + "'>" + data.name + "</a>");
-      $("#subtitle").html(data.subtitle);
-      index_list[0] = data.list;
-      maxpage = parseInt(data.maxpage);
-      if (maxpage > 0) {
-        $("#list").html("");
-        if (current < 1 || current > maxpage)
-          window.location.href = "/";
-          
-        GetPage(current, function () {
-          ShowPage(current);
-          
-          if (current == 1) {
-            $("#btn-prev").attr("href", "/?" + maxpage);
-          } else {
-            if (current == 2)
-              $("#btn-prev").attr("href", "/");
-            else
-              $("#btn-prev").attr("href", "/?" + (current - 1));
-          }
-          
-          if (current == maxpage) {
-            $("#btn-next").attr("href", "/");
-          } else {
-            $("#btn-next").attr("href", "/?" + (current + 1));
-          }
-        
-          $("#div-btn").show();
-          
-          if (data.articles && data.articles.length) {
-            var a = data.articles;
-            var d = $("#div-articles");
-            var html = "";
-            for (var i = 0; i < a.length; i++) {
-              html += "<a class='btn btn-default btn-sm' style='margin-right: 20px;' href='";
-              html += "post.html?" + current + "-" + Encode(a[i].path);
-              html += "'>";
-              html += a[i].title;
-              html += "</a>";
-            }
-            d.html(html);
-            d.show();
-          }
-        });
-        
-      } else {
-        $("#list").html("<h3>No Post</h3><br>");
-      }
-    }, "json").fail(function () {
-      $("#list").html("system error");
-    });
-  });
-</script>
 </body>
 </html>
