@@ -6,6 +6,7 @@ var qhwebConfig = null;
 var qhwebArticles = null;
 
 qhwebControllers.controller("mainController", function ($scope, $routeParams, $http) {
+  document.title = "title";
   $scope.title = "title";
   $scope.subtitle = "subtitle";
   $scope.mainButton = {display: "none"};
@@ -16,6 +17,7 @@ qhwebControllers.controller("mainController", function ($scope, $routeParams, $h
     if (qhwebConfig) {
       $scope.title = qhwebConfig.siteName;
       $scope.subtitle = qhwebConfig.siteSubtitle;
+      document.title = qhwebConfig.siteName;
       callback && callback();
     } else {
       $http.get("/config")
@@ -83,7 +85,7 @@ qhwebControllers.controller("mainController", function ($scope, $routeParams, $h
 qhwebControllers.controller("newController", function ($scope, $location, $http) {
   $scope.title = "";
   $scope.key = "";
-  
+  document.title = "New Post";
   
   var now = new Date();
   now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
@@ -154,6 +156,7 @@ qhwebControllers.controller("showController", function ($scope, $location, $rout
         $scope.title = result.title;
         $scope.subtitle = result.date;
         $scope.content = result.content;
+        document.title = result.title;
         setTimeout(window.LoadEditor, 100);
       }
     })
