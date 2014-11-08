@@ -2,17 +2,17 @@
 
 var qhwebControllers = angular.module("qhwebControllers", []);
 
-var CurrentShowItem = null;
-
-
 var qhwebConfig = null;
 var qhwebArticles = null;
 
 qhwebControllers.controller("mainController", function ($scope, $routeParams, $http) {
   $scope.title = "title";
   $scope.subtitle = "subtitle";
+  $scope.mainButton = {display: "none"};
+  $scope.pages = [];
+  $scope.maxPage = 1;
   
-  function ApplyConfig (callback) {
+  function GetConfig (callback) {
     if (qhwebConfig) {
       $scope.title = qhwebConfig.siteName;
       $scope.subtitle = qhwebConfig.siteSubtitle;
@@ -21,45 +21,58 @@ qhwebControllers.controller("mainController", function ($scope, $routeParams, $h
       $http.get("/config")
         .success(function (result) {
           qhwebConfig = result;
-          ApplyConfig(callback);
+          GetConfig(callback);
         });
     }
   }
   
-  ApplyConfig(function () {
-    var itemOfPage = qhwebConfig.itemOfPage;  
-    
-    if ($routeParams.page && parseInt($routeParams.page)) {
-      $scope.page = parseInt($routeParams.page);
-    } else {
-      $scope.page = 1;
-    }
-    
-    $scope.info = "" + $scope.page;
-    $scope.posts = [];
-    
-    var page = $scope.page - 1;
-    
-    $http.get("/page?start="+ page*itemOfPage + "&number=" + itemOfPage)
-      .success(function (result) {
+  GetConfig();
+  
+  var itemOfPage = 12;
+  
+  if ($routeParams.page) {
+    $scope.page = parseInt($routeParams.page);
+  } else {
+    $scope.page = 1;
+  }
+  
+  $scope.info = "";
+  $scope.posts = [];
+  
+  $http.get("/page?start="+ ($scope.page - 1)*itemOfPage + "&number=" + itemOfPage)
+    .success(function (result) {
+      $scope.maxPage = Math.max(Math.ceil(result.count / itemOfPage), 1);
+      
+      if ($scope.page > $scope.maxPage || $scope.page < 1) {
+        if (window.history && window.history.length > 1) {
+          window.history.go(-1);
+        } else {
+          window.location.href = "#/main";
+        }
+      } else {
         $scope.posts = result.posts;
-        $scope.info += " / " + Math.ceil(result.count / itemOfPage);
+        $scope.info = "" + $scope.page + " / " + $scope.maxPage;
+        $scope.mainButton = {display: ""};
+        $scope.pages = [];
+        for (var i = Math.max(1, $scope.page - 4); i <= Math.min($scope.maxPage, $scope.page + 4); i++) {
+          $scope.pages.push(i);
+        }
+      }
+    })
+    .error(function () {
+    });
+    
+  if (qhwebArticles) {
+    $scope.articles = qhwebArticles;
+  } else {  
+    $http.get("/article")
+      .success(function (result) {
+        $scope.articles = result.articles;
+        qhwebArticles = result.articles;
       })
       .error(function () {
       });
-      
-    if (qhwebArticles) {
-      $scope.articles = qhwebArticles;
-    } else {  
-      $http.get("/article")
-        .success(function (result) {
-          $scope.articles = result.articles;
-          qhwebArticles = result.articles;
-        })
-        .error(function () {
-        });
-    }
-  });
+  }
   
   $scope.encodeURIComponent = encodeURIComponent;
     

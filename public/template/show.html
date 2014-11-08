@@ -1,13 +1,16 @@
-<div class="page-header">
+<div class="row">
   <h1>
-    <span style="font-family: 'cursive';" >{{ title }}</span>
-    <span style="padding-left: 150px;"></span>
-    <small class="pull-right" style="font-family: 'cursive'; padding-top: 25px;">{{ subtitle }}</small>
+    <span>{{ title }}</span>
+    <small class="pull-right" style="padding-top: 25px;">{{ subtitle }}</small>
   </h1>
   <a href="#/main" id="btn-home" class="btn btn-default">
     <span class="glyphicon glyphicon-chevron-left"></span> Home
   </a>
+  <hr>
 </div>
-<div class="topic-content" style="font-size: 1.2em;">
-  <textarea style="display: none;">{{ content }}</textarea>
+
+<div class="row">
+  <div class="topic-content" style="font-size: 1.2em;">
+    <textarea style="display: none;">{{ content }}</textarea>
+  </div>
 </div>

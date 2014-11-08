@@ -1,5 +1,5 @@
 
-var qhweb = angular.module("qhweb", ["ngRoute", "qhwebControllers"]);
+var qhweb = angular.module("qhweb", ["ngRoute", "ngAnimate", "qhwebControllers"]);
 
 qhweb.config(["$routeProvider", function ($routeProvider) {
   $routeProvider.
