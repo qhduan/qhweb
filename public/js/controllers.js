@@ -87,6 +87,14 @@ qhwebControllers.controller("newController", function ($scope, $location, $http)
   $scope.key = "";
   document.title = "New Post";
   
+  $scope.goHome = function (e) {
+    if (window.history.length > 1) {
+      window.history.go(-1);
+    } else {
+      window.location.href = "#/main";
+    }
+  };
+  
   var now = new Date();
   now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
   $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
@@ -142,6 +150,14 @@ qhwebControllers.controller("showController", function ($scope, $location, $rout
   var title = $routeParams.title;
   var type = $routeParams.type;
   
+  $scope.goHome = function () { 
+    if (window.history.length > 1) {
+      window.history.go(-1);
+    } else {
+      window.location.href = "#/main";
+    }
+  };
+    
   if (typeof title != "string" || title.trim().length <= 0 || (type != "post" && type != "article")) {
     alertify.alert("Invalid arguments");
     $location.path("#/main");
