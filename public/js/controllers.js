@@ -5,13 +5,17 @@ var qhwebControllers = angular.module("qhwebControllers", []);
 var qhwebConfig = null;
 var qhwebArticles = null;
 
-qhwebControllers.controller("mainController", function ($scope, $routeParams, $http) {
+var qhwebLastPath = [];
+
+qhwebControllers.controller("mainController", function ($scope, $routeParams, $http, $location) {
   document.title = "title";
   $scope.title = "title";
   $scope.subtitle = "subtitle";
   $scope.mainButton = {display: "none"};
   $scope.pages = [];
   $scope.maxPage = 1;
+  
+  qhwebLastPath.push($location.url());
   
   function GetConfig (callback) {
     if (qhwebConfig) {
@@ -46,8 +50,9 @@ qhwebControllers.controller("mainController", function ($scope, $routeParams, $h
       $scope.maxPage = Math.max(Math.ceil(result.count / itemOfPage), 1);
       
       if ($scope.page > $scope.maxPage || $scope.page < 1) {
-        if (window.history && window.history.length > 1) {
-          window.history.go(-1);
+        if (qhwebLastPath.length > 1) {  
+          qhwebLastPath.pop();
+          window.location.href = "#" + qhwebLastPath[qhwebLastPath.length - 1];
         } else {
           window.location.href = "#/main";
         }
@@ -82,14 +87,17 @@ qhwebControllers.controller("mainController", function ($scope, $routeParams, $h
 
 
 
-qhwebControllers.controller("newController", function ($scope, $location, $http) {
+qhwebControllers.controller("newController", function ($scope, $location, $http, $location) {
   $scope.title = "";
   $scope.key = "";
   document.title = "New Post";
   
+  qhwebLastPath.push($location.url());
+  
   $scope.goHome = function (e) {
-    if (window.history.length > 1) {
-      window.history.go(-1);
+    if (qhwebLastPath.length > 1) {
+      qhwebLastPath.pop();
+      window.location.href = "#" + qhwebLastPath[qhwebLastPath.length - 1];
     } else {
       window.location.href = "#/main";
     }
@@ -146,13 +154,16 @@ qhwebControllers.controller("newController", function ($scope, $location, $http)
   setTimeout(window.LoadEditor, 100);
 });
 
-qhwebControllers.controller("showController", function ($scope, $location, $routeParams, $http) {
+qhwebControllers.controller("showController", function ($scope, $location, $routeParams, $http, $location) {
   var title = $routeParams.title;
   var type = $routeParams.type;
   
-  $scope.goHome = function () { 
-    if (window.history.length > 1) {
-      window.history.go(-1);
+  qhwebLastPath.push($location.url());
+  
+  $scope.goHome = function () {
+    if (qhwebLastPath.length > 1) {
+      qhwebLastPath.pop();
+      window.location.href = "#" + qhwebLastPath[qhwebLastPath.length - 1];
     } else {
       window.location.href = "#/main";
     }
