@@ -20,6 +20,20 @@ qhweb.config(["$routeProvider", function ($routeProvider) {
     });
 }]);
 
+qhweb.run(function ($rootScope, $location) {
+  var history = [];
+  
+  $rootScope.$on("$routeChangeSuccess", function () {
+    history.push($location.url());
+  });
+  
+  $rootScope.goBack = function () {
+    var url = "/main";
+    if (history.length > 1) url = history.splice(-2)[0];
+    window.location.href = "#" + url;
+  };
+});
+
 qhweb.config(["$sceProvider", function ($sceProvider) {
   $sceProvider.enabled(false);
 }]);

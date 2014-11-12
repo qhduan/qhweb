@@ -5,23 +5,22 @@ var qhwebControllers = angular.module("qhwebControllers", []);
 var qhwebConfig = null;
 var qhwebArticles = null;
 
-var qhwebLastPath = [];
-
-qhwebControllers.controller("mainController", function ($scope, $routeParams, $http, $location) {
-  document.title = "title";
+qhwebControllers.controller("mainController", function ($rootScope, $scope, $routeParams, $http, $location) {
   $scope.title = "title";
   $scope.subtitle = "subtitle";
   $scope.mainButton = {display: "none"};
   $scope.pages = [];
   $scope.maxPage = 1;
+  $scope.info = "";
+  $scope.posts = [];
+  $scope.encodeURIComponent = encodeURIComponent;
+  var itemOfPage = 12;
   
-  qhwebLastPath.push($location.url());
-  
-  function GetConfig (callback) {
+  (function GetConfig (callback) {
     if (qhwebConfig) {
       $scope.title = qhwebConfig.siteName;
       $scope.subtitle = qhwebConfig.siteSubtitle;
-      document.title = qhwebConfig.siteName;
+      $rootScope.title = qhwebConfig.siteName;
       callback && callback();
     } else {
       $http.get("/config")
@@ -30,82 +29,59 @@ qhwebControllers.controller("mainController", function ($scope, $routeParams, $h
           GetConfig(callback);
         });
     }
-  }
+  })();// autorun
   
-  GetConfig();
+  (function GetArticles () {
+    if (qhwebArticles) {
+      $scope.articles = qhwebArticles;
+    } else {  
+      $http.get("/article")
+        .success(function (result) {
+          $scope.articles = result.articles;
+          qhwebArticles = result.articles;
+        });
+    }
+  })(); // autorun
   
-  var itemOfPage = 12;
-  
-  if ($routeParams.page) {
-    $scope.page = parseInt($routeParams.page);
-  } else {
-    $scope.page = 1;
-  }
-  
-  $scope.info = "";
-  $scope.posts = [];
-  
-  $http.get("/page?start="+ ($scope.page - 1)*itemOfPage + "&number=" + itemOfPage)
-    .success(function (result) {
-      $scope.maxPage = Math.max(Math.ceil(result.count / itemOfPage), 1);
-      
-      if ($scope.page > $scope.maxPage || $scope.page < 1) {
-        if (qhwebLastPath.length > 1) {  
-          qhwebLastPath.pop();
-          window.location.href = "#" + qhwebLastPath[qhwebLastPath.length - 1];
-        } else {
-          window.location.href = "#/main";
-        }
-      } else {
-        $scope.posts = result.posts;
-        $scope.info = "" + $scope.page + " / " + $scope.maxPage;
-        $scope.mainButton = {display: ""};
-        $scope.pages = [];
-        for (var i = Math.max(1, $scope.page - 4); i <= Math.min($scope.maxPage, $scope.page + 4); i++) {
-          $scope.pages.push(i);
-        }
-      }
-    })
-    .error(function () {
-    });
+  (function GetPosts () {
+    if ($routeParams.page && parseInt($routeParams.page)) {
+      $scope.page = parseInt($routeParams.page);
+    } else {
+      $scope.page = 1;
+    }
     
-  if (qhwebArticles) {
-    $scope.articles = qhwebArticles;
-  } else {  
-    $http.get("/article")
+    $http.get("/page?start="+ ($scope.page - 1)*itemOfPage + "&number=" + itemOfPage)
       .success(function (result) {
-        $scope.articles = result.articles;
-        qhwebArticles = result.articles;
-      })
-      .error(function () {
+        $scope.maxPage = Math.max(Math.ceil(result.count / itemOfPage), 1);
+        
+        if ($scope.page > $scope.maxPage || $scope.page < 1) {
+          $rootScope.goBack();
+        } else {
+          $scope.posts = result.posts;
+          $scope.info = "" + $scope.page + " / " + $scope.maxPage;
+          $scope.mainButton = {display: ""};
+          $scope.pages = [];
+          for (var i = Math.max(1, $scope.page - 4); i <= Math.min($scope.maxPage, $scope.page + 4); i++) {
+            $scope.pages.push(i);
+          }
+        }
       });
-  }
+  })(); // autorun
   
-  $scope.encodeURIComponent = encodeURIComponent;
-    
 });
 
 
 
-qhwebControllers.controller("newController", function ($scope, $location, $http, $location) {
+qhwebControllers.controller("newController", function ($rootScope, $scope, $location, $http, $location) {
+  $rootScope.title = "New Post";
   $scope.title = "";
   $scope.key = "";
-  document.title = "New Post";
   
-  qhwebLastPath.push($location.url());
-  
-  $scope.goHome = function (e) {
-    if (qhwebLastPath.length > 1) {
-      qhwebLastPath.pop();
-      window.location.href = "#" + qhwebLastPath[qhwebLastPath.length - 1];
-    } else {
-      window.location.href = "#/main";
-    }
-  };
-  
-  var now = new Date();
-  now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
-  $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
+  (function InsertDate () {
+    var now = new Date();
+    now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
+    $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
+  })(); // autorun
   
   $scope.create = function () {
     if ($("textarea[name='content']").length == 0) return;
@@ -139,10 +115,12 @@ qhwebControllers.controller("newController", function ($scope, $location, $http,
     $http.post("/new", data)
       .success(function (result) {
         if (result.message) {
-          alertify.alert(result.message);
+          alertify.alert(result.message, function () {
+            $rootScope.goBack();
+          });
         } else if (result.success) {
           alertify.alert("Post create successful", function () {
-            window.location.href = "#/main";
+            $rootScope.goBack();
           });
         } else {
           alertify.alert("unknown error");
@@ -150,43 +128,31 @@ qhwebControllers.controller("newController", function ($scope, $location, $http,
       });
   };
   
-  
   setTimeout(window.LoadEditor, 100);
 });
 
-qhwebControllers.controller("showController", function ($scope, $location, $routeParams, $http, $location) {
+qhwebControllers.controller("showController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
   var title = $routeParams.title;
   var type = $routeParams.type;
-  
-  qhwebLastPath.push($location.url());
-  
-  $scope.goHome = function () {
-    if (qhwebLastPath.length > 1) {
-      qhwebLastPath.pop();
-      window.location.href = "#" + qhwebLastPath[qhwebLastPath.length - 1];
-    } else {
-      window.location.href = "#/main";
-    }
-  };
     
   if (typeof title != "string" || title.trim().length <= 0 || (type != "post" && type != "article")) {
     alertify.alert("Invalid arguments");
-    $location.path("#/main");
+    $rootScope.goBack();
     return;
   }
   
   $http.get("/content?type=" + type + "&title=" + encodeURIComponent(title))
     .success(function (result) {
       if (result.message) {
-        alertify.alert(result.message);
+        alertify.alert(result.message, function () {
+          $rootScope.goBack();
+        });
       } else {
+        $rootScope.title = result.title;
         $scope.title = result.title;
         $scope.subtitle = result.date;
         $scope.content = result.content;
-        document.title = result.title;
         setTimeout(window.LoadEditor, 100);
       }
-    })
-    .error();
-  
+    });  
 });

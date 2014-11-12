@@ -1,7 +1,14 @@
 <div class="container-fluid" style="margin: 0px 30px;">
   <div class="row">
-    <h1>New Post</h1>
-    <button ng-click="goHome()" class="btn btn-default">
+    <h1>
+      <a href="#" onclick="event.preventDefault();" ng-click="goBack()">
+        <span class="glyphicon glyphicon-home"></span>
+        Home
+      </a>
+      /
+      New Post
+    </h1>
+    <button ng-click="goBack()" class="btn btn-default">
       <span class="glyphicon glyphicon-chevron-left"></span> Home
     </button>
     <button ng-click="create()" class="btn btn-primary pull-right">

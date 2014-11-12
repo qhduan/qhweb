@@ -1,7 +1,10 @@
 <div class="container-fluid" style="margin: 0px 30px;">
   <div class="row">
     <h1>
-      {{ title }}
+      <a href="#/main">
+        <span class="glyphicon glyphicon-home"></span>
+        {{ title }}
+      </a>
       <small class="pull-right" style="padding-top: 25px;">{{ subtitle }}</small>
     </h1>
     <hr>
@@ -14,11 +17,13 @@
           <h5>Article</h5>
         </div>
         <div class="panel-body list-group">
+          <div class="text-center" ng-if="articles.length == 0">
+            <h3>Loading</h3>
+          </div>
           <a ng-repeat="article in articles"
             class='list-group-item'
             href="#/show?type=article&title={{ encodeURIComponent(article.title) }}"
           ><!-- a -->
-            
             {{ article.title }}
           </a>
         </div>
@@ -33,6 +38,9 @@
           
           <div class="visible-xs-block visible-sm-block">
             <ol class="breadcrumb">
+              <div class="text-center" ng-if="articles.length == 0">
+                <h3>Loading</h3>
+              </div>
               <li ng-repeat="article in articles">
                 <a href="#/show?type=article&title={{ encodeURIComponent(article.title) }}">
                   {{ article.title }}
@@ -47,6 +55,9 @@
             </div>
             
             <div class="panel-body list-group">
+              <div class="text-center" ng-if="posts.length == 0">
+                <h3>Loading</h3>
+              </div>
               <a ng-repeat="post in posts"
                 class='list-group-item'
                 href="#/show?type=post&title={{ encodeURIComponent(post.title) }}"
