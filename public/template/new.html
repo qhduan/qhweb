@@ -1,54 +1,57 @@
-<div class="row">
-  <h1>New Post</h1>
-  <button ng-click="goHome()" class="btn btn-default">
-    <span class="glyphicon glyphicon-chevron-left"></span> Home
-  </button>
-  <button ng-click="create()" class="btn btn-primary pull-right">
-    <span class="glyphicon glyphicon-floppy-disk"></span> Submit
-  </button>
-  <hr>
-</div>
-
-<div class="row">
-  <div class="form-group col-xs-12">
-    <input ng-model="title" type="text" class="form-control" style="text-align: center;" placeholder="Post Title">
-  </div>
-</div>
-
-<form id="uploadform" onsubmit="Submit(event)" method="post" target="target" enctype="multipart/form-data" action="/upload" role="form">
-  <input id="file" name="file" type="file" onchange="$('#filepath').val($('#file').val());" style="display: none;">
-  <input type="hidden" name="key">
-  <input type="hidden" name="date">
-</form>
-
-<div class="row">
-  <div class="form-group col-xs-6">
-    <input ng-model="key" id="key" type="password" class="form-control" style="text-align: center;" placeholder="Pass Key">
-  </div>
-  <div class="form-group col-xs-6">
-    <input ng-model="date" id="date" type="text" class="form-control" style="text-align: center;" readOnly>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-lg-2 col-md-2 col-sm-3 col-xs-4">
-    <button onclick="$('#file').click()" class="btn btn-default form-control">
-      <span class="glyphicon glyphicon-folder-open"></span> Browse
+<div class="container-fluid" style="margin: 0px 30px;">
+  <div class="row">
+    <h1>New Post</h1>
+    <button ng-click="goHome()" class="btn btn-default">
+      <span class="glyphicon glyphicon-chevron-left"></span> Home
     </button>
-  </div>
-  <div class="col-lg-8 col-md-8 col-sm-6 col-xs-4">
-    <input readonly id="filepath" class="form-control" type="text">
-  </div>
-  <div class="col-lg-2 col-md-2 col-sm-3 col-xs-4">
-    <button onclick="Upload(event)" class="btn btn-default form-control">
-      <span class="glyphicon glyphicon-cloud-upload"></span> Upload
+    <button ng-click="create()" class="btn btn-primary pull-right">
+      <span class="glyphicon glyphicon-floppy-disk"></span> Submit
     </button>
+    <hr>
   </div>
-</div>
 
-<div id="editor"></div>
-  
-<iframe id="target" name="target" src="" style="width: 0; height: 0; border: 0px solid #fff;"></iframe>
+  <div class="row">
+    <div class="form-group col-xs-12">
+      <input ng-model="title" type="text" class="form-control" style="text-align: center;" placeholder="Post Title">
+    </div>
+  </div>
+
+  <form id="uploadform" onsubmit="Submit(event)" method="post" target="target" enctype="multipart/form-data" action="/upload" role="form">
+    <input id="file" name="file" type="file" onchange="$('#filepath').val($('#file').val());" style="display: none;">
+    <input type="hidden" name="key">
+    <input type="hidden" name="date">
+  </form>
+
+  <div class="row">
+    <div class="form-group col-xs-6">
+      <input ng-model="key" id="key" type="password" class="form-control" style="text-align: center;" placeholder="Pass Key">
+    </div>
+    <div class="form-group col-xs-6">
+      <input ng-model="date" id="date" type="text" class="form-control" style="text-align: center;" readOnly>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-2 col-md-2 col-sm-3 col-xs-4">
+      <button onclick="$('#file').click()" class="btn btn-default form-control">
+        <span class="glyphicon glyphicon-folder-open"></span> Browse
+      </button>
+    </div>
+    <div class="col-lg-8 col-md-8 col-sm-6 col-xs-4">
+      <input readonly id="filepath" class="form-control" type="text">
+    </div>
+    <div class="col-lg-2 col-md-2 col-sm-3 col-xs-4">
+      <button onclick="Upload(event)" class="btn btn-default form-control">
+        <span class="glyphicon glyphicon-cloud-upload"></span> Upload
+      </button>
+    </div>
+  </div>
+
+  <div id="editor"></div>
+    
+  <iframe id="target" name="target" src="" style="width: 0; height: 0; border: 0px solid #fff;"></iframe>
+
+</div>
 
 <script>
   

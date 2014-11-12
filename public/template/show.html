@@ -1,16 +1,18 @@
-<div class="row">
-  <h1>
-    <span>{{ title }}</span>
-    <small class="pull-right" style="padding-top: 25px;">{{ subtitle }}</small>
-  </h1>
-  <button href="#" ng-click="goHome()" id="btn-home" class="btn btn-default">
-    <span class="glyphicon glyphicon-chevron-left"></span> Home
-  </button>
-  <hr>
-</div>
+<div class="container-fluid" style="margin: 0px 30px;">
+  <div class="row">
+    <h1>
+      <span>{{ title }}</span>
+      <small class="pull-right" style="padding-top: 25px;">{{ subtitle }}</small>
+    </h1>
+    <button href="#" ng-click="goHome()" id="btn-home" class="btn btn-default">
+      <span class="glyphicon glyphicon-chevron-left"></span> Home
+    </button>
+    <hr>
+  </div>
 
-<div class="row">
-  <div class="topic-content" style="font-size: 1.2em;">
-    <textarea style="display: none;">{{ content }}</textarea>
+  <div class="row">
+    <div class="topic-content" style="font-size: 1.2em;">
+      <textarea style="display: none;">{{ content }}</textarea>
+    </div>
   </div>
 </div>
