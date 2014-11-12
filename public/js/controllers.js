@@ -134,6 +134,7 @@ qhwebControllers.controller("newController", function ($rootScope, $scope, $loca
 qhwebControllers.controller("showController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
   var title = $routeParams.title;
   var type = $routeParams.type;
+  $scope.content = "";
     
   if (typeof title != "string" || title.trim().length <= 0 || (type != "post" && type != "article")) {
     alertify.alert("Invalid arguments");
