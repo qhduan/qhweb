@@ -23,3 +23,13 @@ qhweb.config(["$routeProvider", function ($routeProvider) {
 qhweb.config(["$sceProvider", function ($sceProvider) {
   $sceProvider.enabled(false);
 }]);
+
+qhweb.animation(".qhwebAnimation", function () {
+  return {
+    enter: function (element, done) {
+      console.log(element);
+      done();
+      return function (){};
+    }
+  };
+});
