@@ -6,7 +6,9 @@
         Home
       </a>
       /
-      {{ title }}
+      <a href="#/show/{{ id }}">
+        {{ title }}
+      </a>
     </h1>
     <hr>
   </div>
@@ -28,6 +30,7 @@
     <br>
     <a href="#/edit/{{ id }}" class="btn btn-default btn-small">Edit</a>
     <button class="btn btn-default btn-small" ng-click="del()">Delete</button>
+    <div style="min-height: 40px;"></div>
   </div>
 </div>
 

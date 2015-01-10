@@ -12,14 +12,11 @@
   
   <div class="row">
     <div class="col-md-3 hidden-xs hidden-sm">
-      <div class="panel panel-default">
+      <div class="panel panel-default" style="height: 100%;">
         <div class="panel-heading">
           <h5>Article</h5>
         </div>
         <div class="panel-body list-group">
-          <div class="text-center" ng-if="articles.length == 0">
-            <h3>Loading</h3>
-          </div>
           <a ng-repeat="article in articles"
             class='list-group-item'
             href="#/show/{{ encodeURIComponent(article.id) }}"
@@ -81,43 +78,196 @@
 
   <div class="row text-center">
     
-    <div class="pull-left" style="margin-top: 30px; margin-left: 30px;">
-      <label ng-bind="info"></label>
-    </div>
-    
     <a class="pull-right btn btn-default" style="margin-top: 16px; margin-right: 30px;" href="#/new">New</a>
 
-    <nav>
-      <ul class="pagination">      
+    <nav class="hidden-sm hidden-xs">
+      <ul class="pagination">
+        
         <li ng-if="page != 1">
           <a href="#/main" title="Firt p1">
             <span class="glyphicon glyphicon-step-backward"></span>
+            1
+          </a>
+        </li>
+        <li ng-if="page == 1" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            <span class="glyphicon glyphicon-step-backward"></span>
+            1
           </a>
         </li>
         
         <li ng-if="page != 1">
-          <a href="#/main?page={{ page - 1}}" title="Prev P{{ page - 1}}">
+          <a href="#/main/{{ page - 1}}" title="Prev P{{ page - 1}}">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+          </a>
+        </li>
+        <li ng-if="page == 1" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
             <span class="glyphicon glyphicon-chevron-left"></span>
           </a>
         </li>
         
-        <li ng-repeat="p in pages" class="{{ p == page ? 'active' : ''}}">
-          <a href="#/main?page={{ p }}">{{ p }}</a>
+        <li ng-repeat="num in range(4, page) track by $index"
+          ng-class="{disabled: num <= 0 || num > maxPage, active: num == page}">
+          <a href="#" ng-if="num <= 0 || num > maxPage" onclick="event.preventDefault()">
+            -
+          </a>
+          <a href="#/main/{{ num }}" ng-if="num > 0 && num <= maxPage" title="page {{ num }}">
+            {{ num }}
+          </a>
         </li>
         
         <li ng-if="page != maxPage">
-          <a href="#/main?page={{ page + 1}}" title="Next P{{ page + 1 }}">
+          <a href="#/main/{{ page + 1}}" title="Next P{{ page + 1 }}">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+          </a>
+        </li>
+        <li ng-if="page == maxPage" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
             <span class="glyphicon glyphicon-chevron-right"></span>
           </a>
         </li>
         
         <li ng-if="page != maxPage">
-          <a href="#/main?page={{ maxPage }}" title="Last P{{ maxPage }}">
+          <a href="#/main/{{ maxPage }}" title="Last P{{ maxPage }}">
+            {{ maxPage }}
+            <span class="glyphicon glyphicon-step-forward"></span>
+          </a>
+        </li>
+        <li ng-if="page == maxPage" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            {{ maxPage }}
             <span class="glyphicon glyphicon-step-forward"></span>
           </a>
         </li>
       </ul>
     </nav>
 
+    <nav class="visible-sm-block">
+      <ul class="pagination">
+        
+        <li ng-if="page != 1">
+          <a href="#/main" title="Firt p1">
+            <span class="glyphicon glyphicon-step-backward"></span>
+            1
+          </a>
+        </li>
+        <li ng-if="page == 1" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            <span class="glyphicon glyphicon-step-backward"></span>
+            1
+          </a>
+        </li>
+        
+        <li ng-if="page != 1">
+          <a href="#/main/{{ page - 1}}" title="Prev P{{ page - 1}}">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+          </a>
+        </li>
+        <li ng-if="page == 1" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+          </a>
+        </li>
+        
+        <li ng-repeat="num in range(2, page) track by $index"
+          ng-class="{disabled: num <= 0 || num > maxPage, active: num == page}">
+          <a href="#" ng-if="num <= 0 || num > maxPage" onclick="event.preventDefault()">
+            -
+          </a>
+          <a href="#/main/{{ num }}" ng-if="num > 0 && num <= maxPage" title="page {{ num }}">
+            {{ num }}
+          </a>
+        </li>
+        
+        <li ng-if="page != maxPage">
+          <a href="#/main/{{ page + 1}}" title="Next P{{ page + 1 }}">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+          </a>
+        </li>
+        <li ng-if="page == maxPage" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+          </a>
+        </li>
+        
+        <li ng-if="page != maxPage">
+          <a href="#/main/{{ maxPage }}" title="Last P{{ maxPage }}">
+            {{ maxPage }}
+            <span class="glyphicon glyphicon-step-forward"></span>
+          </a>
+        </li>
+        <li ng-if="page == maxPage" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            {{ maxPage }}
+            <span class="glyphicon glyphicon-step-forward"></span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <nav class="visible-xs-block">
+      <ul class="pagination">
+        
+        <li ng-if="page != 1">
+          <a href="#/main" title="Firt p1">
+            <span class="glyphicon glyphicon-step-backward"></span>
+            1
+          </a>
+        </li>
+        <li ng-if="page == 1" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            <span class="glyphicon glyphicon-step-backward"></span>
+            1
+          </a>
+        </li>
+        
+        <li ng-if="page != 1">
+          <a href="#/main/{{ page - 1}}" title="Prev P{{ page - 1}}">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+          </a>
+        </li>
+        <li ng-if="page == 1" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            <span class="glyphicon glyphicon-chevron-left"></span>
+          </a>
+        </li>
+        
+        <li ng-repeat="num in range(1, page) track by $index"
+          ng-class="{disabled: num <= 0 || num > maxPage, active: num == page}">
+          <a href="#" ng-if="num <= 0 || num > maxPage" onclick="event.preventDefault()">
+            -
+          </a>
+          <a href="#/main/{{ num }}" ng-if="num > 0 && num <= maxPage" title="page {{ num }}">
+            {{ num }}
+          </a>
+        </li>
+        
+        <li ng-if="page != maxPage">
+          <a href="#/main/{{ page + 1}}" title="Next P{{ page + 1 }}">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+          </a>
+        </li>
+        <li ng-if="page == maxPage" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            <span class="glyphicon glyphicon-chevron-right"></span>
+          </a>
+        </li>
+        
+        <li ng-if="page != maxPage">
+          <a href="#/main/{{ maxPage }}" title="Last P{{ maxPage }}">
+            {{ maxPage }}
+            <span class="glyphicon glyphicon-step-forward"></span>
+          </a>
+        </li>
+        <li ng-if="page == maxPage" class="disabled">
+          <a href="#" onclick="event.preventDefault()">
+            {{ maxPage }}
+            <span class="glyphicon glyphicon-step-forward"></span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    
   </div>
 </div>

@@ -16,6 +16,14 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
   $scope.encodeURIComponent = encodeURIComponent;
   var itemOfPage = 12;
   
+  $scope.range = function (n, page) {
+    var r = [];
+    for (var i = (page-n); i <= (page+n); i++) {
+      r.push(i);
+    }
+    return r;
+  };
+  
   (function GetConfig (callback) {
     if (qhwebConfig) {
       $scope.title = qhwebConfig.siteName;
@@ -58,7 +66,6 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
           $rootScope.goBack();
         } else {
           $scope.posts = result.posts;
-          $scope.info = "" + $scope.page + " / " + $scope.maxPage;
           $scope.mainButton = {display: ""};
           $scope.pages = [];
           for (var i = Math.max(1, $scope.page - 4); i <= Math.min($scope.maxPage, $scope.page + 4); i++) {
