@@ -156,6 +156,7 @@ qhwebControllers.controller("showController", function ($rootScope, $scope, $loc
         
         var ta = document.createElement("textarea");
         ta.value = result.content;
+        ta.style.display = "none";
         document.getElementById("content").appendChild(ta);
         
         $scope.createDate = "Created at " + result.date;
@@ -213,6 +214,7 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
         $scope.title = result.title;
         
         var ta = document.createElement("textarea");
+        ta.style.display = "none";
         ta.value = result.content;
         document.getElementById("editor").appendChild(ta);
         setTimeout(window.LoadEditor, 200);
