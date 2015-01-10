@@ -17,9 +17,9 @@ app.get("/", function (req, res) {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-app.post("/new", function (req, res) {
-  post.create(req, res);
-});
+app.post("/new", post.create);
+app.post("/edit", post.edit);
+app.post("/del", post.del);
 
 app.get("/page", post.page);
 app.get("/article", post.article);

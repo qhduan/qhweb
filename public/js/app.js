@@ -7,9 +7,13 @@ qhweb.config(["$routeProvider", function ($routeProvider) {
       templateUrl: "template/main.html",
       controller: "mainController"
     }).
-    when("/show", {
+    when("/show/:id", {
       templateUrl: "template/show.html",
       controller: "showController"
+    }).
+    when("/edit/:id", {
+      templateUrl: "template/edit.html",
+      controller: "editController"
     }).
     when("/new", {
       templateUrl: "template/new.html",

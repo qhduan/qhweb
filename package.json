@@ -10,16 +10,17 @@
     "blog"
   ],
   "dependencies": {
-    "express": ">=4.4.1",
-    "body-parser": ">=1.3.0",
-    "connect-multiparty": ">=1.0.5",
-    "compression": ">=1.1.0",
-    "config": ">=1.2.1"
+    "express": "latest",
+    "body-parser": "latest",
+    "connect-multiparty": "latest",
+    "compression": "latest",
+    "config": "latest",
+    "node-uuid": "latest"
   },
   "engines": {
     "node": ">=0.8.0"
   },
-  "main": "app.js",
+  "main": "qw.js",
    "repository": {
     "type": "git",
     "url": "https://github.com/qhduan/qhweb.git"

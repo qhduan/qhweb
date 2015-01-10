@@ -1,4 +1,4 @@
-<div class="container-fluid" style="margin: 0px 30px;">
+<div class="container" style="margin: 0px auto;">
   <div class="row">
     <h1>
       <a href="#/main">
@@ -22,7 +22,7 @@
           </div>
           <a ng-repeat="article in articles"
             class='list-group-item'
-            href="#/show?type=article&title={{ encodeURIComponent(article.title) }}"
+            href="#/show/{{ encodeURIComponent(article.id) }}"
           ><!-- a -->
             {{ article.title }}
           </a>
@@ -42,7 +42,7 @@
                 <h3>Loading</h3>
               </div>
               <li ng-repeat="article in articles">
-                <a href="#/show?type=article&title={{ encodeURIComponent(article.title) }}">
+                <a href="#/show/{{ encodeURIComponent(article.id) }}">
                   {{ article.title }}
                 </a>
               </li>
@@ -60,7 +60,7 @@
               </div>
               <a ng-repeat="post in posts"
                 class='list-group-item'
-                href="#/show?type=post&title={{ encodeURIComponent(post.title) }}"
+                href="#/show/{{ encodeURIComponent(post.id) }}"
               ><!-- a -->
                 
                 {{ post.title }}

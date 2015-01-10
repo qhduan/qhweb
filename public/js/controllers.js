@@ -34,13 +34,13 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
   (function GetArticles () {
     if (qhwebArticles) {
       $scope.articles = qhwebArticles;
-    } else {  
-      $http.get("/article")
-        .success(function (result) {
-          $scope.articles = result.articles;
-          qhwebArticles = result.articles;
-        });
     }
+    
+    $http.get("/article")
+      .success(function (result) {
+        $scope.articles = result.articles;
+        qhwebArticles = result.articles;
+      });
   })(); // autorun
   
   (function GetPosts () {
@@ -83,7 +83,7 @@ qhwebControllers.controller("newController", function ($rootScope, $scope, $loca
     $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
   })(); // autorun
   
-  $scope.create = function () {
+  $scope.submit = function () {
     if ($("textarea[name='content']").length == 0) return;
     var content = $("textarea[name='content']").val().trim();
     
@@ -132,17 +132,18 @@ qhwebControllers.controller("newController", function ($rootScope, $scope, $loca
 });
 
 qhwebControllers.controller("showController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
-  var title = $routeParams.title;
-  var type = $routeParams.type;
+  var id = $routeParams.id;
   $scope.content = "";
     
-  if (typeof title != "string" || title.trim().length <= 0 || (type != "post" && type != "article")) {
+  if (typeof id != "string" || id.trim().length <= 0) {
     alertify.alert("Invalid arguments");
     $rootScope.goBack();
     return;
   }
   
-  $http.get("/content?type=" + type + "&title=" + encodeURIComponent(title))
+  id = id.trim();
+  
+  $http.get("/content?id=" + encodeURIComponent(id))
     .success(function (result) {
       if (result.message) {
         alertify.alert(result.message, function () {
@@ -150,10 +151,125 @@ qhwebControllers.controller("showController", function ($rootScope, $scope, $loc
         });
       } else {
         $rootScope.title = result.title;
+        $scope.id = id;
         $scope.title = result.title;
-        $scope.subtitle = result.date;
-        $scope.content = result.content;
-        setTimeout(window.LoadEditor, 100);
+        
+        var ta = document.createElement("textarea");
+        ta.value = result.content;
+        document.getElementById("content").appendChild(ta);
+        
+        $scope.createDate = "Created at " + result.date;
+        if (result.edit && result.edit.length) {
+          $scope.editDate = "Edited at " + result.edit;
+        }
+        setTimeout(window.LoadEditor, 200);
+        
+        $scope.del = function () {
+          alertify.prompt("Please input your key:", function (evt, value) {
+            if (evt) {
+              var data = {
+                id: id,
+                key: value
+              };
+              $http.post("/del", data)
+                .success(function (result) {
+                  if (result.success) {
+                    alertify.alert("already deleted", function () {
+                      $rootScope.goBack();
+                    });
+                  } else {
+                    alertify.alert(result.message);
+                  }
+                });
+            }
+          }, {"type" : "password"});
+        };
       }
-    });  
+    });
+});
+
+
+qhwebControllers.controller("editController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
+  $rootScope.title = "Edit Post";
+  $scope.title = "";
+  $scope.key = "";
+
+  var id = $routeParams.id;
+  $scope.content = "";
+    
+  if (typeof id != "string" || id.trim().length <= 0) {
+    alertify.alert("Invalid arguments");
+    $rootScope.goBack();
+    return;
+  }
+  
+  $http.get("/content?id=" + encodeURIComponent(id))
+    .success(function (result) {
+      if (result.message) {
+        alertify.alert(result.message, function () {
+          $rootScope.goBack();
+        });
+      } else {
+        $scope.title = result.title;
+        
+        var ta = document.createElement("textarea");
+        ta.value = result.content;
+        document.getElementById("editor").appendChild(ta);
+        setTimeout(window.LoadEditor, 200);
+        
+        (function InsertDate () {
+          var now = new Date();
+          now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
+          $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
+        })(); // autorun
+        
+        $scope.submit = function () {
+          if ($("textarea[name='content']").length == 0) return;
+          var content = $("textarea[name='content']").val().trim();
+          
+          var title = $scope.title.trim();
+          var date = $scope.date.trim();
+          var key = $scope.key.trim();
+          
+          if (title == "") {
+            alertify.alert("title can't be empty!");
+            return;
+          }
+          if (date == "") {
+            alertify.alert("date can't be empty!");
+            return;
+          }
+          if (key == "") {
+            alertify.alert("key can't be empty!");
+            return;
+          }
+          if (content == "") {
+            alertify.alert("content can't be empty!");
+            return;
+          }
+          var data = {};
+          data.id = id;
+          data.title = title;
+          data.date = date;
+          data.key = key;
+          data.content = content;
+          $http.post("/edit", data)
+            .success(function (result) {
+              if (result.message) {
+                alertify.alert(result.message, function () {
+                  $rootScope.goBack();
+                });
+              } else if (result.success) {
+                alertify.alert("Post edit successful", function () {
+                  $rootScope.goBack();
+                });
+              } else {
+                alertify.alert("unknown error");
+              }
+            });
+        }; // submit()
+        
+      }
+    });
+
 });

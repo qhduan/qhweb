@@ -19,17 +19,20 @@
   // Need函数是用来导入其他css和js的，作用类似于head.js或者require.js
   // list是一个array数组或者string文件名，保存css或者js
   // callback是一个在所有文件加载后的回调函数，可以为空
+  var NeedLoaded = {};
   function Need (list, callback) {
     if (typeof list == "string") list = [list];
     if (typeof list != "object" || !list.length) return;
     
     function LoadCss (url, callback) { // 读取css
+      if (callback)
+        callback(url);
       var link = document.createElement("link");
       link.type = "text/css";
       link.rel = "stylesheet";
       link.href = url;
-      if (callback)
-        link.onload = function () { callback(url); };
+      //if (callback)
+      //  link.onload = function () { callback(url); };
       link.onerror = function () { console.log("load css", url, "failed"); };
       document.getElementsByTagName("head")[0].appendChild(link);
     }
@@ -50,8 +53,11 @@
     }
     var count = 0;
     
-    function Complete () { // 完成函数，当一个文件loadedd时候执行
+    function Complete (url) { // 完成函数，当一个文件loadedd时候执行
       count ++;
+      if (!NeedLoaded[url]) {
+        NeedLoaded[url] = 1;
+      }
       if (count >= list.length) {
         if (typeof callback == "function") {
           callback();
@@ -61,14 +67,19 @@
     
     for (var i = 0; i < list.length; i++) { // 加载list数组里的所有文件
       var url = list[i];
+      
+      if (NeedLoaded[url]) {
+        Complete(url);
+        continue;
+      }
+      
       var ext = GetExt(url);
       // 不能用ext==".js"，因为有些js文件可能有后缀，例如".js?param=10"
       if (ext.match(/^\.js/)) {
         // 当js加载完之后调用complete
         LoadJs(url, Complete);
       } else if (ext.match(/^\.css/)) {
-        LoadCss(url);
-        Complete();
+        LoadCss(url, Complete);
       } else {
         console.log("A file can't load", url, ext);
         Complete();
@@ -313,12 +324,18 @@
             "<a href='#' target='_blank' id='DeditorHelp' class='btn btn-sm pull-right'>\n" +
               "<span class='fa fa-question'></span>\n" +
             "</a>\n" +
+            
+            "<label class='pull-right' style='display: inline;'>preview</label>" +
+            "<input id='DeditorPreviewEnable' class='pull-right' type='checkbox' checked style='display: inline; margin-top: 10px;'>" +
+            
             "<a href='#' id='DeditorLost' style='display: none;' class='btn btn-sm pull-right' href='#'>\n" +
               "上次编辑的内容\n" +
             "</a>\n" +
           "</div>\n" +
         "</div>\n" +
-        "<div class='row'>\n" +
+        "<div id='DeditorInputRow' class='row'>\n" +
+          "<div id='DeditorInputSpace' class='col-md-3' style='display: none;'>\n" +
+          "</div>\n" +
           "<div id='DeditorInput' class='col-md-6 col-xs-12'>\n" +
             "<div id='wmd-button-bar'></div>\n" +
             "<textarea placeholder='在这里输入' spellcheck='false' class='wmd-input' id='wmd-input' name='content'></textarea>\n" +
@@ -686,50 +703,90 @@
   }
   
   function UserPrefer (e) {
-      if (!$) return;
-      var textarea = document.getElementById("wmd-input");
-      if (!textarea || !$(textarea).popover) return;
-      if (!textarea.selectionStart) return;
-      if (Config.StopUsernamePrefer) return;
+    if (!$) return;
+    var textarea = document.getElementById("wmd-input");
+    if (!textarea || !$(textarea).popover) return;
+    if (!textarea.selectionStart) return;
+    if (Config.StopUsernamePrefer) return;
+    
+    if (!Config.usernamePreferInit) {
+      $("#wmd-input").popover({
+        title: "",
+        content: "",
+        placement: function (dom) {
+          $(dom).css("position", "absolute");
+        },
+        trigger: "manual",
+        html: true
+      });
+      Config.usernamePreferInit = true;
+    }
+    
+    var pos = textarea.selectionStart;
+    
+    var str = textarea.value.substring(Math.max(0, pos - 51), pos);
+    
+    var m = str.match(/@([\w\-\u2E80-\u9FFF]{1,50})$/);
+    if (m) {
+      var username = m[1];
       
-      if (!Config.usernamePreferInit) {
-        $("#wmd-input").popover({
-          title: "",
-          content: "",
-          placement: function (dom) {
-            $(dom).css("position", "absolute");
-          },
-          trigger: "manual",
-          html: true
-        });
-        Config.usernamePreferInit = true;
+      if (Config.usernamePreferCache && Config.usernamePreferCache[username]) {
+        ShowUserPrefer(Config.usernamePreferCache[username], username);
+      } else {          
+        $.ajax({url: "/user/matchUsername?username=" + encodeURIComponent(username), success: function(data) {
+          if (data.success && data.success.length) {
+            if (!Config.usernamePreferCache) Config.usernamePreferCache = {};
+            Config.usernamePreferCache[username] = data.success;
+            ShowUserPrefer(data.success, username);
+          } else {
+            $("#wmd-input").popover("hide");
+          }
+        }, dataType: "json", cache: false});
+      }
+    } else {
+      $("#wmd-input").popover("hide");
+    }
+  }
+  
+  function DeditorPreviewEnable () {
+    var checkbox = $("#DeditorPreviewEnable");
+    var yes = checkbox.prop("checked");
+    if (yes) {
+      $("#DeditorInputSpace").hide();
+      $("#DeditorPreview").show();
+      $("#DeditorInput").removeClass("border-left-right");
+    } else {
+      $("#DeditorPreview").hide();
+      $("#DeditorInputSpace").show();
+      $("#DeditorInput").addClass("border-left-right");
+    }
+  }
+  
+  
+  
+  function InsertContent () {
+    Config.lastCache = GetCache();
+    
+    if (typeof Config.value == "string") {
+      console.log("load config.value");
+      $("#wmd-input").val(Config.value);
+      $("#wmd-input").focus();
+      
+      if (Config.lastCache) { // 如果是编辑的情况，则有Config.value，但是依然可能丢失
+        $("#DeditorLost").show();
       }
       
-      var pos = textarea.selectionStart;
+    } else if (Config.lastCache) {
       
-      var str = textarea.value.substring(Math.max(0, pos - 51), pos);
-      
-      var m = str.match(/@([\w\-\u2E80-\u9FFF]{1,50})$/);
-      if (m) {
-        var username = m[1];
-        
-        if (Config.usernamePreferCache && Config.usernamePreferCache[username]) {
-          ShowUserPrefer(Config.usernamePreferCache[username], username);
-        } else {          
-          $.ajax({url: "/user/matchUsername?username=" + encodeURIComponent(username), success: function(data) {
-            if (data.success && data.success.length) {
-              if (!Config.usernamePreferCache) Config.usernamePreferCache = {};
-              Config.usernamePreferCache[username] = data.success;
-              ShowUserPrefer(data.success, username);
-            } else {
-              $("#wmd-input").popover("hide");
-            }
-          }, dataType: "json", cache: false});
-        }
-      } else {
-        $("#wmd-input").popover("hide");
+      if (Config.lastCache.hide) {
+        $("#DeditorLost").show();
+      } else {      
+        console.log("load localStorage");
+        $("#wmd-input").val(Config.lastCache.content);
+        $("#wmd-input").focus();
       }
     }
+  }
     
         
   // 编辑器初始化函数，不着急运行在最下面的Need函数里调用
@@ -740,7 +797,10 @@
       return;
     }
     
-    if (Config.init == true) return;
+    if (Config.init == true) {
+      InsertContent();
+      return;
+    }
     Config.init = true;
     
     ShowPost();
@@ -768,28 +828,7 @@
     window.pagedownEditor = pagedownEditor;
     pagedownEditor.run();
     
-    
-    Config.lastCache = GetCache();
-    
-    if (typeof Config.value == "string") {
-      console.log("load config.value");
-      $("#wmd-input").val(Config.value);
-      $("#wmd-input").focus();
-      
-      if (Config.lastCache) { // 如果是编辑的情况，则有Config.value，但是依然可能丢失
-        $("#DeditorLost").show();
-      }
-      
-    } else if (Config.lastCache) {
-      
-      if (Config.lastCache.hide) {
-        $("#DeditorLost").show();
-      } else {      
-        console.log("load localStorage");
-        $("#wmd-input").val(Config.lastCache.content);
-        $("#wmd-input").focus();
-      }
-    }
+    InsertContent();
     
     // 在提交时清除editor缓存
     $("form").each(function () {
@@ -929,11 +968,16 @@
     
     var timer = null;
     function RefreshPreviewDelay () {
+      
+      if ($("#DeditorPreviewEnable").length) {
+        if ($("#DeditorPreviewEnable").prop("checked") == false) return;
+      }
+      
       if (timer) {
         clearTimeout(timer);
         timer = null;
       }
-      timer = setTimeout(RefreshPreview, 450);
+      timer = setTimeout(RefreshPreview, 750);
     }
     
     RefreshPreviewDelay();
@@ -944,6 +988,12 @@
 
     $("#wmd-input").on("keypress", RefreshPreviewDelay);
     $("#wmd-input").on("keydown", RefreshPreviewDelay);
+    
+    
+    $("#DeditorPreviewEnable").on("click", function () {
+      DeditorPreviewEnable();
+      RefreshPreviewDelay();
+    });
     
     pagedownEditor.hooks.chain("onPreviewRefresh", function () {
       if ($("#wmd-preview").length && typeof $("#wmd-preview").html() == "string" && $("#wmd-preview").html().trim() == "") {
@@ -966,23 +1016,25 @@
     // 设置Mathjax, > 2.3 版本支持这么设置
     // Mathjax类型为TeX-AMS_HTML，即tex，latex转为html
     // AMS扩展是必须的为了一些latex语句
-    window.MathJax = {
-      TeX: {
-        equationNumbers: {
-          autoNumber: "none"
-        }
-      },
-      tex2jax: {
-        inlineMath: [ ['$','$'] ],
-        displayMath: [ ['$$','$$'] ],
-        processEscapes: true,
-        displayIndent: "1.5em",
-        "HTML-CSS": {
-          scale: 90
-        }
-      },
-      skipStartupTypeset: true
-    };
+    if (!window.MathJax) {
+      window.MathJax = {
+        TeX: {
+          equationNumbers: {
+            autoNumber: "none"
+          }
+        },
+        tex2jax: {
+          inlineMath: [ ['$','$'] ],
+          displayMath: [ ['$$','$$'] ],
+          processEscapes: true,
+          displayIndent: "1.5em",
+          "HTML-CSS": {
+            scale: 90
+          }
+        },
+        skipStartupTypeset: true
+      };
+    }
     
     if (document.getElementById("editor") == null && document.querySelector(Config.contentSel) == null) {
       
@@ -1020,6 +1072,7 @@
         if (editorElement.children[i].tagName == "TEXTAREA") {
           Config.value = editorElement.children[i].value;
           editorElement.removeChild(editorElement.children[i]);
+          console.log("read textarea", Config.value.substr(0, 20));
           break;
         }
       }
