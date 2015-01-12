@@ -1,15 +1,31 @@
 var fs = require("fs");
 var util = require("util");
-var config = require("config")
 var uuid = require("node-uuid")
+
+var config = require("./config")
 var tool = require("./tool");
 
 var Posts = [];
 var Articles = [];
+var Categories = [];
+var CategoriesNumber = {};
+var MonthArchive = [];
+var MonthArchiveNumber = {};
 
 var database = __dirname + "/database/";
 
-function LoadMarkdown (dir) {
+function ExistsOrCreate (dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+}
+ExistsOrCreate(database);
+ExistsOrCreate(database + "posts");
+ExistsOrCreate(database + "articles");
+ExistsOrCreate(database + "upload");
+
+
+function LoadMarkdown (dir, post) {
 	//var dir = __dirname + "/database/posts";
 	if (fs.statSync(database + dir).isDirectory()) {
 		var result = [];
@@ -46,20 +62,66 @@ function LoadMarkdown (dir) {
           
 					elem.title = header.match(/title:\ ([^\0\n]+)\n/);
 					elem.date = header.match(/date:\ ([^\0\n]+)\n/);
-					elem.edit = header.match(/edit:\ ([^\0\n]+)\n/);
 					if (!elem.title || !elem.date) {
 					  console.log(d,fn);
 					  throw "file can't be parsed";
 					}
           
+					elem.title = elem.title[1];
+					elem.date = elem.date[1];
+          
+          var date = elem.date.match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/)
+          if (!date) {
+					  console.log(d,fn);
+					  throw "file date can't be parsed";
+          }
+          elem.archive = date[1] + date[2];
+          
+          if (post) {
+            if (MonthArchiveNumber.hasOwnProperty(elem.archive)) {
+              MonthArchiveNumber[elem.archive] = MonthArchiveNumber[elem.archive] + 1;
+            } else {
+              MonthArchiveNumber[elem.archive] = 1;
+            }
+            
+            if (MonthArchive.indexOf(elem.archive) == -1) {
+              MonthArchive.push(elem.archive);
+            }
+          
+            elem.accessible = header.match(/accessible:\ ([^\0\n]+)\n/);
+            if (elem.accessible) {
+              elem.accessible = elem.accessible[1];
+            } else {
+              elem.accessible = "public";
+            }
+          
+            elem.category = header.match(/category:\ ([^\0\n]+)\n/);
+            if (elem.category) {
+              elem.category = elem.category[1];
+              
+              if (Categories.indexOf(elem.category) == -1) {
+                Categories.push(elem.category);
+              }
+              
+              if (CategoriesNumber.hasOwnProperty(elem.category)) {
+                CategoriesNumber[elem.category]++;
+              } else {
+                CategoriesNumber[elem.category] = 1;
+              }
+            } else {
+              elem.category = "";
+            }
+          }
+          
+					elem.edit = header.match(/edit:\ ([^\0\n]+)\n/);
           if (elem.edit) {
             elem.edit = elem.edit[1];
           } else {
             elem.edit = "";
           }
-					elem.title = elem.title[1];
-					elem.date = elem.date[1];
+          
           elem.content = content;
+          
 					result.push(elem)
 				}
 			}
@@ -69,6 +131,13 @@ function LoadMarkdown (dir) {
 		  b = new Date(b.date);
 		  return b.getTime() - a.getTime();
 		});
+    
+    MonthArchive.sort(function (a, b) {
+      if (a < b) return 1;
+      if (a > b) return -1;
+      return 0;
+    });
+    
     return result;
 	} else {
 		throw "fail to load dir";
@@ -93,6 +162,10 @@ function CreatePost (req, res, callback) {
     return res.json({message: "key can't be empty!"});
   }
   
+  if (key != config.get("key")) {
+    return res.json({message: "key don't match!"});
+  }
+  
   if (!content || content.trim() == "") {
     return res.json({message: "content can't be empty!"});
   }
@@ -101,6 +174,16 @@ function CreatePost (req, res, callback) {
   date = date.trim();
   key = key.trim();
   content = content.trim();
+  
+  var accessible = "public";
+  if (req.body.accessible && req.body.accessible == "private") {
+    accessible = "private";
+  }
+  
+  var category = "";
+  if (req.body.category && typeof req.body.category == "string" && req.body.category.trim().length) {
+    category = req.body.category.trim();
+  }
   
   for (var i = 0; i < Posts.length; i++) {
     if (Posts[i].title == title)
@@ -111,42 +194,69 @@ function CreatePost (req, res, callback) {
     if (Articles[i].title == title)
       return res.json({message: "title conflict article"});
   }
+  
+  var type = "post";
+  if (req.body.type && typeof req.body.category == "string" && req.body.type == "article") {
+    type = "article";
+  }
 
-  var d = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
-  if (!d) {
-    return res.json({message: "date invalid!"});
-  }
-  
-  var year = d[1];
-  var month = d[2];
-  
-  if (key != config.get("qhweb.key")) {
-    return res.json({message: "key don't match!"});
-  }
-  
-  var id = uuid.v1();
-  
-  var path = util.format(__dirname + "/database/posts/%s/%s/%s.md", year, month, id);
-   
-  if (!fs.existsSync(util.format(__dirname + "/database/posts/%s", year))) {
-    fs.mkdirSync(util.format(__dirname + "/database/posts/%s", year));
-  }
-  
-  if (!fs.existsSync(util.format(__dirname + "/database/posts/%s/%s", year, month))) {
-    fs.mkdirSync(util.format(__dirname + "/database/posts/%s/%s", year, month));
-  }
-  
-  fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s", title, date, content), {encoding: "utf-8"}, function (err) {
-    if(err) throw err;
-    Posts.unshift({
-      id: id,
-      title: title,
-      dir: "posts/" + year + "/" + month,
-      content: content,
-      date: date
+  if (type == "post") {
+    var d = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
+    if (!d) {
+      return res.json({message: "date invalid!"});
+    }  
+    var year = d[1];
+    var month = d[2];
+    
+    var id = uuid.v1();
+    
+    var path = util.format(database + "posts/%s/%s/%s.md", year, month, id);
+     
+    if (!fs.existsSync(util.format(database + "posts/%s", year))) {
+      fs.mkdirSync(util.format(database + "posts/%s", year));
+    }
+    
+    if (!fs.existsSync(util.format(database + "posts/%s/%s", year, month))) {
+      fs.mkdirSync(util.format(database + "posts/%s/%s", year, month));
+    }
+    
+    fs.writeFile(path, util.format("title: %s\ndate: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
+      title, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
+      if(err) throw err;
+      Posts.unshift({
+        id: id,
+        title: title,
+        dir: "posts/" + year + "/" + month,
+        content: content,
+        date: date,
+        category: category,
+        accessible: accessible
+      });
+      
+      if (category.length && Categories.indexOf(category) == -1) {
+        Categories.push(category);
+      }
+      
+      res.json({success: "ok"});
     });
-    res.json({success: "ok"});
-  });
+  } else {
+    var id = uuid.v1();
+    var path = util.format(database + "articles/%s.md", id);
+    
+    fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s",
+      title, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
+      if(err) throw err;
+      Articles.unshift({
+        id: id,
+        title: title,
+        dir: "articles",
+        content: content,
+        date: date
+      });
+      
+      res.json({success: "ok"});
+    });
+  }
 }
 
 function EditPost (req, res, callback) {
@@ -172,6 +282,10 @@ function EditPost (req, res, callback) {
     return res.json({message: "key can't be empty!"});
   }
   
+  if (key != config.get("key")) {
+    return res.json({message: "key don't match!"});
+  }
+  
   if (!content || content.trim() == "") {
     return res.json({message: "content can't be empty!"});
   }
@@ -181,6 +295,16 @@ function EditPost (req, res, callback) {
   date = date.trim();
   key = key.trim();
   content = content.trim();
+  
+  var accessible = "public";
+  if (req.body.accessible && req.body.accessible == "private") {
+    accessible = "private";
+  }
+  
+  var category = "";
+  if (req.body.category && typeof req.body.category == "string" && req.body.category.trim().length) {
+    category = req.body.category.trim();
+  }
   
   if (!date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/)) {
     return res.json({message: "date invalid!"});
@@ -214,35 +338,44 @@ function EditPost (req, res, callback) {
     return res.json({message: "not found"});
   }
   
-  if (key != config.get("qhweb.key")) {
-    return res.json({message: "key don't match!"});
-  }
-  
   var path = database + old.dir + "/" + id + ".md";
   
-  fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\n---\n\n%s", title, old.date, date, content), {encoding: "utf-8"}, function (err) {
-    if(err) throw err;
-    if (type == "post") {
+  if (type == "post") {
+    fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
+      title, old.date, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
+      if(err) throw err;
+      
+      if (category.length && Categories.indexOf(category) == -1) {
+        Categories.push(category);
+      }
       Posts[pos] = {
         id: id,
         title: title,
         dir: old.dir,
         content: content,
         date: old.date,
-        edit: date
+        edit: date,
+        category: category,
+        accessible: accessible
       };
-    } else if (type == "article") {
-      Articles[pos] = {
-        id: id,
-        title: title,
-        dir: old.dir,
-        content: content,
-        date: old.date,
-        edit: date
-      };
-    }
-    res.json({success: "ok"});
-  });
+      res.json({success: "ok"});
+    });
+  } else if (type == "article") {
+    fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\n---\n\n%s",
+      title, old.date, date, content), {encoding: "utf-8"}, function (err) {
+      if(err) throw err;
+    Articles[pos] = {
+      id: id,
+      title: title,
+      dir: old.dir,
+      content: content,
+      date: old.date,
+      edit: date
+    };
+      res.json({success: "ok"});
+    });
+  }
+  
 }
 
 
@@ -290,7 +423,7 @@ function DeletePost (req, res, callback) {
     return res.json({message: "not found"});
   }
 
-  if (key != config.get("qhweb.key")) {
+  if (key != config.get("key")) {
     return res.json({message: "key don't match!"});
   }
   
@@ -310,52 +443,159 @@ function DeletePost (req, res, callback) {
 
 
 function GetPage (req, res) {
-  var start = parseInt(req.param("start"));
-  var number = parseInt(req.param("number"));
+  var start = parseInt(req.body.start);
+  var number = parseInt(req.body.number);
   
   if (isNaN(start) || isNaN(number) || start < 0 || number <= 0) {
     return res.json({message: "invalid arguments"});
-  }  
+  }
   
-  var result = {};
-  result.posts = Posts.slice(start, start + number);
-  result.count = Posts.length;
+  if (start >= Posts.length) {
+    return res.json({message: "out of range"});
+  }
+  
+  var private = false;
+  
+  if (req.body.key) {
+    if (req.body.key == config.get("key")) {
+      private = true;
+    }
+  }
+  
+  var result = {
+    posts: []
+  };
+  
+  var list = Posts;
+  
+  if (private == false) {
+    list = list.filter(function (item) {
+      if (item.accessible != "private") return true;
+      return false;
+    });
+  }
+  
+  if (req.body.category && typeof req.body.category == "string" && req.body.category.length) {
+    list = list.filter(function (item) {
+      if (item.category == req.body.category) return true;
+      return false;
+    });
+  }
+  
+  if (req.body.archive && typeof req.body.archive == "string" && req.body.archive.length == 6) {
+    list = list.filter(function (item) {
+      if (item.archive == req.body.archive) return true;
+      return false;
+    });
+  }
+  
+  result.count = list.length;
+  
+  while (number) {    
+    if (start >= list.length) {
+      break;
+    }
+    
+    result.posts.push(list[start]);
+    number--;
+    start++;
+  }
   return res.json(result);
 }
 
-function GetArticles (req, res) {
+function GetInfo (req, res) {
   var result= {};
   result.articles = Articles;
-  result.count = Articles.length;
+  result.categories = Categories;
+  result.categoriesNumber = CategoriesNumber;
+  result.archives = MonthArchive;
+  result.archivesNumber = MonthArchiveNumber;
+  
+  result.config = {};
+  result.config.siteName = config.get("siteName"),
+  result.config.siteSubtitle = config.get("siteSubtitle"),
+  result.config.itemOfPage = config.get("itemOfPage"),
+  result.config.url = config.get("url")
+  
   return res.json(result);
+}
+
+function SetConfig (req, res) {
+  var siteName = req.body.siteName;
+  var siteSubtitle = req.body.siteSubtitle;
+  var url = req.body.url;
+  var itemOfPage = req.body.itemOfPage;
+  var key = req.body.key;
+  
+  if (key != config.get("key")) {
+    return res.json({message: "invalid key"});
+  }
+  
+  itemOfPage = parseInt(itemOfPage);
+  
+  if (isNaN(itemOfPage) || itemOfPage <= 0) {
+    return res.json({message: "invalid item of page"});
+  }
+  
+  if (siteName) {
+    config.set("siteName", siteName);
+  }
+  
+  if (siteSubtitle) {
+    config.set("siteSubtitle", siteSubtitle);
+  }
+  
+  if (url) {
+    config.set("url", url);
+  }
+  
+  if (itemOfPage) {
+    config.set("itemOfPage", itemOfPage);
+  }
+  
+  res.json({ok: "success"});
+  
 }
 
 function GetContent (req, res) {
-  var id = req.param("id");
+  var id = req.body.id;
   
   if (typeof id != "string" || id.trim().length <= 0) {
     return res.json({message: "invalid arguments"});
   }
   
+  function Result (obj, type) {
+    var ret = {};
+    for (k in obj) {
+      ret[k] = obj[k];
+    }
+    ret.type = type;
+    ret.categories = Categories;
+    res.json(ret);
+  }
+  
   for (var i = 0; i < Articles.length; i++) {
-    if (id == Articles[i].id)
-      return res.json(Articles[i]);
+    if (id == Articles[i].id) {
+      return Result(Articles[i], "article");
+    }
   }
   
   for (var i = 0; i < Posts.length; i++) {
-    if (id == Posts[i].id)
-      return res.json(Posts[i]);
+    if (id == Posts[i].id) {
+      return Result(Posts[i], "post");
+    }
   }
   
   return res.json({message: "not found"});
 }
 
-Posts = LoadMarkdown("posts");
+Posts = LoadMarkdown("posts", true);
 Articles = LoadMarkdown("articles");
 
-exports.article = GetArticles;
+exports.info = GetInfo;
 exports.page = GetPage;
 exports.create = CreatePost;
 exports.edit = EditPost;
 exports.del = DeletePost;
 exports.content = GetContent;
+exports.config = SetConfig;

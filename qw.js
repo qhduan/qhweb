@@ -3,8 +3,8 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var multipart = require('connect-multiparty');
 var compression = require('compression');
-var config = require("config");
 
+var config = require("./config");
 var tool = require("./tool");
 var post = require("./post");
 
@@ -21,17 +21,33 @@ app.post("/new", post.create);
 app.post("/edit", post.edit);
 app.post("/del", post.del);
 
-app.get("/page", post.page);
-app.get("/article", post.article);
-app.get("/content", post.content);
-app.get("/config", tool.config);
+app.post("/verify", function (req, res) {
+  var key = req.body.key;
+  
+  if (!key || key.trim() == "") {
+    return res.json({message: "key can't be empty!"});
+  }
+  
+  if (key != config.get("key")) {
+    return res.json({message: "key don't match!"});
+  }
+  
+  return res.json({ok: "success"});
+});
+
+app.post("/page", post.page);
+
+app.post("/info", post.info);
+app.post("/content", post.content);
+app.post("/config", post.config);
+app.post("/password", tool.password);
 
 app.post('/upload', multipart(), tool.upload);
 
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/database"));
 
-app.listen(config.get("qhweb.port"), function () {
-  console.log("QHWeb is running on port", config.get("qhweb.port"));
+app.listen(config.get("port"), function () {
+  console.log("QHWeb is running on port", config.get("port"));
 });
 

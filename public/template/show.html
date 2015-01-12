@@ -23,13 +23,22 @@
   <div class="row">
     <hr>
     <div class="pull-right">
+      <span>{{ accessible }}</span>
+      <br>
+      <span>{{ category }}</span>
+      <br>
       <span>{{ createDate }}</span>
       <br>
       <span>{{ editDate }}</span>
     </div>
     <br>
-    <a href="#/edit/{{ id }}" class="btn btn-default btn-small">Edit</a>
-    <button class="btn btn-default btn-small" ng-click="del()">Delete</button>
+    <div ng-if="qhwebKey.length">
+      <a href="#/edit/{{ id }}" class="btn btn-default btn-small">Edit</a>
+      <button class="btn btn-default btn-small" ng-click="del()">Delete</button>
+    </div>
+    <div ng-if="!qhwebKey.length">
+      <button class="btn btn-default btn-small" ng-click="verify()">Verify</button>
+    </div>
     <div style="min-height: 40px;"></div>
   </div>
 </div>

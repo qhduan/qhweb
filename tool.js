@@ -1,6 +1,7 @@
 var fs = require("fs");
 var util = require("util");
-var config = require("config")
+
+var config = require("./config")
 
 
 // Convert a name to a valid filename
@@ -67,7 +68,7 @@ function Upload(req, res) {
   var year = d[1];
   var month = d[2];
   
-  if (key != config.get("qhweb.key")) {
+  if (key != config.get("key")) {
     Wrong("key don't match!");
     return;
   }
@@ -104,15 +105,21 @@ function Upload(req, res) {
   });
 }
 
-function GetConfig (req, res) {
-  res.json({
-    siteName: config.get("qhweb.siteName"),
-    siteSubtitle: config.get("qhweb.siteSubtitle"),
-    itemOfPage: config.get("qhweb.itemOfPage"),
-    url: config.get("qhweb.url")
-  });
-}
-
-exports.config = GetConfig;
 exports.upload = Upload;
-exports.GetValidName = GetValidName;
+exports.password = function (req, res) {
+  var key = req.body.key;
+  var nkey = req.body.nkey;
+  
+  if (key != config.get("key")) {
+    return res.json({message: "invalid key"});
+  }
+  
+  if (nkey.trim().length <= 0) {
+    return res.json({message: "invalid new key"});
+  }
+  
+  config.set("key", nkey);
+  res.json({ok: "success"});
+};
+
+

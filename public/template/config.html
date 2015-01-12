@@ -1,0 +1,38 @@
+<div class="container" style="margin: 0px auto;">
+  <div class="row">
+    <h1>
+      <a href="#" onclick="event.preventDefault();" ng-click="goBack()">
+        <span class="glyphicon glyphicon-home"></span>
+        Home
+      </a>
+      /
+      <a href="#/config">
+        Config
+      </a>
+    </h1>
+    <hr>
+  </div>
+
+  <div class="row">
+    <div class="col-xs-12">
+      <label>Site Name:</label>
+      <input class="form-control" ng-model="siteName" type="text">
+      
+      <label>Site Subtitle:</label>
+      <input class="form-control" ng-model="siteSubtitle" type="text">
+      
+      <label>URL:</label>
+      <input class="form-control" ng-model="url" type="text">
+      
+      <label>Item of Page:</label>
+      <input class="form-control" ng-model="itemOfPage" type="text">
+      
+      <label>Key:</label>
+      <input class="form-control" ng-model="key" type="password">
+      
+      <button class="btn btn-primary" ng-click="submit()">Submit</button>
+    </div>
+  </div>
+  
+</div>
+
