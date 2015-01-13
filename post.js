@@ -475,6 +475,36 @@ function GetPage (req, res) {
     });
   }
   
+  if (req.body.search && typeof req.body.search == "string" && req.body.search.length) {
+    var kw = req.body.search; // keywords
+    kw = kw.split(/\s/);
+    kw = kw.filter(function (item) {
+      if (item.match(/^[a-zA-Z0-9]{1}$/)) return false;
+      return true;
+    });
+    
+    if (kw.length > 0) {    
+      list = list.filter(function (item) {
+        item.searchScore = 0;
+        for (var i = 0; i < kw.length; i++) {
+          if (item.title.indexOf(kw[i]) != -1)
+            item.searchScore += 10;
+          if (item.content.indexOf(kw[i]) != -1)
+            item.searchScore += 2;
+        }
+        if (item.searchScore > 0) return true;
+        return false;
+      });
+      
+      list.sort(function (a, b) {
+        if (a.searchScore > b.searchScore) return 1;
+        if (a.searchScore < b.searchScore) return -1;
+        return 0;
+      });
+      list.reverse();
+    }
+  }
+  
   result.count = list.length;
   result.itemOfPage = config.get("itemOfPage");
   
