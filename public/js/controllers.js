@@ -216,7 +216,9 @@ qhwebControllers.controller("newController", function ($rootScope, $scope, $loca
             $rootScope.goBack();
           });
         } else if (result.success) {
-          alertify.alert("Post create successful");
+          alertify.alert("Post create successful", function () {
+            $rootScope.goBack();
+          });
         } else {
           alertify.alert("unknown error");
         }
@@ -284,7 +286,6 @@ qhwebControllers.controller("showController", function ($rootScope, $scope, $loc
                 .success(function (result) {
                   if (result.success) {
                     alertify.alert("already deleted", function () {
-                      $rootScope.qhwebKey = data.key;
                       $rootScope.goBack();
                     });
                   } else {
@@ -409,7 +410,9 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
                   $rootScope.goBack();
                 });
               } else if (result.success) {
-                alertify.alert("Post edit successful");
+                alertify.alert("Post edit successful", function () {
+                  $rootScope.goBack();
+                });
               } else {
                 alertify.alert("unknown error");
               }

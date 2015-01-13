@@ -1087,7 +1087,6 @@
         if (editorElement.children[i].tagName == "TEXTAREA") {
           Config.value = editorElement.children[i].value;
           editorElement.removeChild(editorElement.children[i]);
-          console.log("read textarea", Config.value.substr(0, 20));
           break;
         }
       }
