@@ -325,8 +325,8 @@
               "<span class='fa fa-question'></span>\n" +
             "</a>\n" +
             
-            "<label class='pull-right' style='display: inline;'>preview</label>" +
-            "<input id='DeditorPreviewEnable' class='pull-right' type='checkbox' checked style='display: inline; margin-top: 10px;'>" +
+            "<label class='pull-right' style='display: inline; margin-top: 4px;'>preview</label>" +
+            "<input id='DeditorPreviewEnable' class='pull-right' type='checkbox' checked style='display: inline; margin-top: 8px;'>" +
             
             "<a href='#' id='DeditorLost' style='display: none;' class='btn btn-sm pull-right' href='#'>\n" +
               "上次编辑的内容\n" +
@@ -344,20 +344,31 @@
             "<div id='wmd-preview' class='wmd-preview'></div>\n" +
           "</div>\n" +
         "</div>\n" +
-      "</div>\n";
-  
-  var helpHTML = "<span><a class='btn btn-sm' href='#'><span class='fa fa-bold'></span></a>&nbsp;&nbsp;  粗体文字按钮，或输入**包裹文字则为粗体文字，例如：<div style='margin-left: 50px;'>**<b>粗体文字</b>**</div></span><hr>" + 
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-italic'></span></a>&nbsp;&nbsp;  斜体文字按钮，或输入*包裹文字则为斜体，例如：<div style='margin-left: 50px;'>*<em>斜体文字</em>*</div></span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-link'></span></a>&nbsp;&nbsp;  超链接按钮，或直接输入格式：<div style='margin-left: 50px;'>[谷歌](http://www.google.com)</div></span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-indent'></span></a>&nbsp;&nbsp;  引用文字按钮，或直接在要引用文字所在行开头写&gt;+引用文字：<div style='margin-left: 50px;'>&gt;引用文字</div></span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-code'></span></a>&nbsp;&nbsp;  代码按钮，代码有多种方式： 1.直接在代码行开头写四个空格；2.用三个```包裹代码（键盘字母Q左上，同~），```必须单独一行，例如：<div style='margin-left: 50px;'>```<br>代码<br>```</div></span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-file-image-o'></span></a>&nbsp;&nbsp;  图片按钮，或直接输入格式（和超链接相比多了一个叹号）：<div style='margin-left: 50px;'>![图片说明](http://图片地址)</div></span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-list-ol'></span></a>&nbsp;&nbsp;  有序列表按钮  <a class='btn btn-sm' href='#'><span class='fa fa-list-ul'></span></a>&nbsp;&nbsp;  无序列表按钮</span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-header'></span></a>&nbsp;&nbsp;  标题按钮，或直接在标题前写一个或多个#+空格，例如：<div style='margin-left: 50px;'># 一级标题<br>## 二级标题<br>### 三级标题</div></span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-ellipsis-h'></span></a>&nbsp;&nbsp;  插入分隔符按钮</span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-undo'></span></a>&nbsp;&nbsp;  撤销按钮  <a class='btn btn-sm' href='#'><span class='fa fa-repeat'></span></a>&nbsp;&nbsp;  重做按钮</span><hr>" +
-    "<span><a class='btn btn-sm' href='#'><span class='fa fa-question'></span></a>&nbsp;&nbsp;  帮助按钮  <a class='btn btn-sm' href='#'><span class='fa fa-expand'></span></a>&nbsp;&nbsp;  全屏按钮</span><hr>" +
-    "<span><a target='_blank' href='http://www.moozhi.com/topic/show/540747763a0ef475770873e8'>详细帮助点击这里</a></span>";
+      "</div>\n" +
+      "<div class='modal fade' id='EditorHelpModal' tabindex='-1' role='dialog' aria-hidden='true' data-backdrop='true' data-keyboard='true'>" +
+        "<div class='modal-dialog'>" +
+          "<div class='modal-content'>" +
+            "<div class='modal-header panel-heading-lc'>" +
+              "<button type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button>" +
+              "<h6 class='modal-title'>帮助</h6>" +
+            "</div>" +
+            "<div class='modal-body panel-body-lc'>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-bold'></span></a>&nbsp;&nbsp;  粗体文字按钮，或输入**包裹文字则为粗体文字，例如：<div style='margin-left: 50px;'>**<b>粗体文字</b>**</div></span><hr>" + 
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-italic'></span></a>&nbsp;&nbsp;  斜体文字按钮，或输入*包裹文字则为斜体，例如：<div style='margin-left: 50px;'>*<em>斜体文字</em>*</div></span><hr>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-link'></span></a>&nbsp;&nbsp;  超链接按钮，或直接输入格式：<div style='margin-left: 50px;'>[谷歌](http://www.google.com)</div></span><hr>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-indent'></span></a>&nbsp;&nbsp;  引用文字按钮，或直接在要引用文字所在行开头写&gt;+引用文字：<div style='margin-left: 50px;'>&gt;引用文字</div></span><hr>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-code'></span></a>&nbsp;&nbsp;  代码按钮，代码有多种方式： 1.直接在代码行开头写四个空格；2.用三个```包裹代码（键盘字母Q左上，同~），```必须单独一行，例如：<div style='margin-left: 50px;'>```<br>代码<br>```</div></span><hr>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-file-image-o'></span></a>&nbsp;&nbsp;  图片按钮，或直接输入格式（和超链接相比多了一个叹号）：<div style='margin-left: 50px;'>![图片说明](http://图片地址)</div></span><hr>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-list-ol'></span></a>&nbsp;&nbsp;  有序列表按钮  <a class='btn btn-sm' href='#'><span class='fa fa-list-ul'></span></a>&nbsp;&nbsp;  无序列表按钮</span><hr>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-header'></span></a>&nbsp;&nbsp;  标题按钮，或直接在标题前写一个或多个#+空格，例如：<div style='margin-left: 50px;'># 一级标题<br>## 二级标题<br>### 三级标题</div></span><hr>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-ellipsis-h'></span></a>&nbsp;&nbsp;  插入分隔符按钮</span>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-undo'></span></a>&nbsp;&nbsp;  撤销按钮  <a class='btn btn-sm' href='#'><span class='fa fa-repeat'></span></a>&nbsp;&nbsp;  重做按钮</span>" +
+              "<span><a class='btn btn-sm' href='#'><span class='fa fa-question'></span></a>&nbsp;&nbsp;  帮助按钮  <a class='btn btn-sm' href='#'><span class='fa fa-expand'></span></a>&nbsp;&nbsp;  全屏按钮</span><hr>" +
+              "<span><a target='_blank' href='http://www.moozhi.com/topic/show/540747763a0ef475770873e8'>详细帮助点击这里</a></span>"
+            "</div>" +
+          "</div><!-- /.modal-content -->" +
+        "</div><!-- /.modal-dialog -->" +
+      "</div><!-- /.modal -->";
     
   
   
@@ -840,6 +851,26 @@
       }
     });
     
+    
+    function RefreshPreview() {
+      pagedownEditor.refreshPreview();
+    }
+    
+    var timer = null;
+    function RefreshPreviewDelay () {
+      
+      if ($("#DeditorPreviewEnable").length) {
+        if ($("#DeditorPreviewEnable").prop("checked") == false) return;
+      }
+      
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      timer = setTimeout(RefreshPreview, 750);
+    }
+    
+    
     var ButtonLink = function (btn_id_1, btn_id_2) {
       // link btn_id_1 to btn_id_2
       if (!btn_id_1 || !btn_id_2) return;
@@ -849,6 +880,7 @@
       $(btn_id_1).on("click", function (e) {
         e.preventDefault();
         btn_id_2.click();
+        RefreshPreview();
       });
     };
     
@@ -906,7 +938,8 @@
     
     $("#DeditorHelp").on("click", function (e) {
       e.preventDefault();
-      Alert(helpHTML);
+      //Alert(helpHTML);
+      $("#EditorHelpModal").modal();
     });
     
     $("#DeditorHelp").on("mouseover", function (e) {
@@ -961,24 +994,6 @@
     $("#wmd-input").on('keyup', save2cache);
     $("#wmd-input").on('change', save2cache);
     $("#wmd-input").on('mousedown', save2cache);
-    
-    function RefreshPreview() {
-      pagedownEditor.refreshPreview();
-    }
-    
-    var timer = null;
-    function RefreshPreviewDelay () {
-      
-      if ($("#DeditorPreviewEnable").length) {
-        if ($("#DeditorPreviewEnable").prop("checked") == false) return;
-      }
-      
-      if (timer) {
-        clearTimeout(timer);
-        timer = null;
-      }
-      timer = setTimeout(RefreshPreview, 750);
-    }
     
     RefreshPreviewDelay();
     

@@ -41,6 +41,7 @@ app.post("/info", post.info);
 app.post("/content", post.content);
 app.post("/config", post.config);
 app.post("/password", tool.password);
+app.post("/reload", post.reload);
 
 app.post('/upload', multipart(), tool.upload);
 

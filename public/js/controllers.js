@@ -1,9 +1,14 @@
 
 
+
 var qhwebControllers = angular.module("qhwebControllers", []);
+
+
 
 var qhwebConfig = null;
 var qhwebArticles = null;
+
+
 
 qhwebControllers.controller("mainController", function ($rootScope, $scope, $routeParams, $http, $location) {
   $scope.title = "title";
@@ -14,7 +19,14 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
   $scope.info = "";
   $scope.posts = [];
   
-  $scope.date = function (choice) {
+  $scope.Reload = function () {
+    $http.post("/reload")
+      .success(function (result) {
+        alertify.alert(result.ok || result.message || "System Error");
+      });
+  };
+  
+  $scope.GoArchive = function (choice) {
     if (choice != "Archive" && choice != "") {
       window.location.href = "#/main?archive=" + choice;
     }
@@ -54,27 +66,21 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
     $rootScope.title = qhwebConfig.siteName;
   }
   
-  function GetInfo (callback) {    
+  function GetInfo () {    
     $http.post("/info")
       .success(function (result) {
         $scope.articles = result.articles;
         $scope.categories = result.categories;
-        $scope.categoriesNumber = result.categoriesNumber;
         $scope.archives = result.archives;
-        $scope.archivesNumber = result.archivesNumber;
         
         qhwebConfig = result.config;
         $scope.title = qhwebConfig.siteName;
         $scope.subtitle = qhwebConfig.siteSubtitle;
         $rootScope.title = qhwebConfig.siteName;
-        
-        if (callback) callback(result);
       });
   }
   
-  function GetPosts () {
-    var itemOfPage = qhwebConfig.itemOfPage || 12;
-    
+  function GetPosts () {    
     if ($routeParams.page && parseInt($routeParams.page)) {
       $scope.page = parseInt($routeParams.page);
     } else {
@@ -94,8 +100,7 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
     }
     
     var obj = {
-      start: ($scope.page - 1)*itemOfPage,
-      number: itemOfPage
+      page: $scope.page
     };
     
     if ($scope.category.length) {
@@ -112,7 +117,7 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
     
     $http.post("/page", obj)
       .success(function (result) {
-        $scope.maxPage = Math.max(Math.ceil(result.count / itemOfPage), 1);
+        $scope.maxPage = Math.max(Math.ceil(result.count / result.itemOfPage), 1);
         
         if ($scope.page > $scope.maxPage || $scope.page < 1) {
           $rootScope.goBack();
@@ -129,9 +134,8 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
   
   $scope.GetPosts = GetPosts;
   
-  GetInfo(function (result) {
-    GetPosts();
-  });
+  GetInfo();
+  GetPosts();
   
 });
 
@@ -156,14 +160,16 @@ qhwebControllers.controller("newController", function ($rootScope, $scope, $loca
     $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
   })(); // autorun
   
-  (function GetCategories () {
-    $http.post("/info")
-      .success(function (result) {
-        $scope.categories = result.categories;
-      });
-  })();
+  $http.post("/info")
+    .success(function (result) {
+      $scope.categories = result.categories;
+    });
   
-  $scope.submit = function () {
+  $scope.ChangeCategory = function (c) {
+    $scope.category = c;
+  };
+  
+  $scope.Submit = function () {
     if ($("textarea[name='content']").length == 0) return;
     var content = $("textarea[name='content']").val().trim();
         
@@ -210,10 +216,7 @@ qhwebControllers.controller("newController", function ($rootScope, $scope, $loca
             $rootScope.goBack();
           });
         } else if (result.success) {
-          alertify.alert("Post create successful", function () {
-            $rootScope.qhwebKey = data.key;
-            $rootScope.goBack();
-          });
+          alertify.alert("Post create successful");
         } else {
           alertify.alert("unknown error");
         }
@@ -222,6 +225,8 @@ qhwebControllers.controller("newController", function ($rootScope, $scope, $loca
   
   setTimeout(window.LoadEditor, 100);
 });
+
+
 
 qhwebControllers.controller("showController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
   var id = $routeParams.id;
@@ -245,6 +250,7 @@ qhwebControllers.controller("showController", function ($rootScope, $scope, $loc
         $rootScope.title = result.title;
         $scope.id = id;
         $scope.title = result.title;
+        $scope.type = result.type;
         
         var ta = document.createElement("textarea");
         ta.value = result.content;
@@ -253,7 +259,9 @@ qhwebControllers.controller("showController", function ($rootScope, $scope, $loc
         
         $scope.createDate = "Created: " + result.date;
         
-        $scope.accessible = result.accessible || "public";
+        if (result.type == "post") {
+          $scope.accessible = result.accessible || "public";
+        }
         
         if (result.edit && result.edit.length) {
           $scope.editDate = "Edited: " + result.edit;
@@ -291,6 +299,7 @@ qhwebControllers.controller("showController", function ($rootScope, $scope, $loc
 });
 
 
+
 qhwebControllers.controller("editController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
   $rootScope.title = "Edit Post";
   $scope.title = "";
@@ -317,6 +326,17 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
     return;
   }
   
+  $scope.ChangeCategory = function (c) {
+    $scope.category = c;
+  };
+  
+  (function GetCategories () {
+    $http.post("/info")
+      .success(function (result) {
+        $scope.categories = result.categories;
+      });
+  })();
+  
   $http.post("/content", {id: id})
     .success(function (result) {
       if (result.message) {
@@ -327,8 +347,6 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
         $scope.title = result.title;
         
         $scope.type = result.type || "post";
-        
-        $scope.categories = result.categories || [];
         
         if (result.accessible && result.accessible == "private") {
           $scope.isprivate = true;
@@ -351,8 +369,7 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
           $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
         })(); // autorun
         
-        $scope.submit = function () {
-          
+        $scope.Submit = function () {
           if ($("textarea[name='content']").length == 0) return;
           var content = $("textarea[name='content']").val().trim();
           
@@ -364,29 +381,26 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
           var accessible = $scope.isprivate ? "private" : "public";
           
           if (title == "") {
-            alertify.alert("title can't be empty!");
-            return;
+            return alertify.alert("title can't be empty!");
           }
           if (date == "") {
-            alertify.alert("date can't be empty!");
-            return;
+            return alertify.alert("date can't be empty!");
           }
           if (key == "") {
-            alertify.alert("key can't be empty!");
-            return;
+            return alertify.alert("key can't be empty!");
           }
           if (content == "") {
-            alertify.alert("content can't be empty!");
-            return;
+            return alertify.alert("content can't be empty!");
           }
-          var data = {};
-          data.id = id;
-          data.title = title;
-          data.date = date;
-          data.key = key;
-          data.content = content;
-          data.category = category;
-          data.accessible = accessible;
+          var data = {
+            id: id,
+            title: title,
+            date: date,
+            key: key,
+            content: content,
+            category: category,
+            accessible: accessible
+          };
     
           $http.post("/edit", data)
             .success(function (result) {
@@ -395,20 +409,18 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
                   $rootScope.goBack();
                 });
               } else if (result.success) {
-                alertify.alert("Post edit successful", function () {
-                  $rootScope.qhwebKey = key;
-                  $rootScope.goBack();
-                });
+                alertify.alert("Post edit successful");
               } else {
                 alertify.alert("unknown error");
               }
             });
-        }; // submit()
+        }; // Submit()
         
       }
     });
 
 });
+
 
 
 qhwebControllers.controller("configController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
@@ -431,7 +443,7 @@ qhwebControllers.controller("configController", function ($rootScope, $scope, $l
         $scope.url = cf.url;
         $scope.itemOfPage = cf.itemOfPage;
         
-        $scope.submit = function () {
+        $scope.Submit = function () {
           if ($scope.key.trim().length <= 0) {
             alertify.alert("key cannot be empty");
             return;
@@ -467,6 +479,7 @@ qhwebControllers.controller("configController", function ($rootScope, $scope, $l
 });
 
 
+
 qhwebControllers.controller("passwordController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
   $scope.okey = "";
   $scope.nkey = "";
@@ -476,15 +489,13 @@ qhwebControllers.controller("passwordController", function ($rootScope, $scope, 
     $scope.okey = $rootScope.qhwebKey;
   }
   
-  $scope.submit = function () {
+  $scope.Submit = function () {
     if ($scope.okey == "") {
-      alertify.alert("old key is empty!");
-      return;
+      return alertify.alert("old key is empty!");
     }
     
     if ($scope.nkey != $scope.rkey) {
-      alertify.alert("new key is different from repeat!");
-      return;
+      return alertify.alert("new key is different from repeat!");
     }
     
     $http.post("password", {key: $scope.okey, nkey: $scope.nkey})
@@ -500,6 +511,5 @@ qhwebControllers.controller("passwordController", function ($rootScope, $scope, 
   };
 
 });
-
 
 

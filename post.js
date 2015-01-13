@@ -5,45 +5,40 @@ var uuid = require("node-uuid")
 var config = require("./config")
 var tool = require("./tool");
 
-var Posts = [];
-var Articles = [];
-var Categories = [];
-var CategoriesNumber = {};
-var MonthArchive = [];
-var MonthArchiveNumber = {};
+var Cache = {}; // 保存各种缓存
 
-var database = __dirname + "/database/";
+var DATABASE = __dirname + "/database/";
 
 function ExistsOrCreate (dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
 }
-ExistsOrCreate(database);
-ExistsOrCreate(database + "posts");
-ExistsOrCreate(database + "articles");
-ExistsOrCreate(database + "upload");
+ExistsOrCreate(DATABASE); // 判断根目录下的database目录是否存在，不存在则创建
+ExistsOrCreate(DATABASE + "posts"); // 帖子目录
+ExistsOrCreate(DATABASE + "articles"); // 文章目录
+ExistsOrCreate(DATABASE + "upload"); // 附件目录
 
 
 function LoadMarkdown (dir, post) {
-	//var dir = __dirname + "/database/posts";
-	if (fs.statSync(database + dir).isDirectory()) {
+  
+	if (fs.statSync(DATABASE + dir).isDirectory()) {
 		var result = [];
 		var list = [];
 		list.push(dir);
 		while (list.length > 0) {
 			var d = list.pop();
-			var l = fs.readdirSync(database + d);
+			var l = fs.readdirSync(DATABASE + d);
 			for (var i in l) {
 				var fn = l[i];
 				var fp = d + "/" + fn;
-				if (fs.statSync(database + fp).isDirectory()) {
+				if (fs.statSync(DATABASE + fp).isDirectory()) {
 					list.push(fp);
-				} else if (fs.statSync(database + fp).isFile() && fn.match(/.md$/)) {
+				} else if (fs.statSync(DATABASE + fp).isFile() && fn.match(/.md$/)) {
           
           var fid = fn.substr(0, fn.length - 3); // cut off ".md"
           
-					var data = fs.readFileSync(database + fp, {encoding: "utf-8"});
+					var data = fs.readFileSync(DATABASE + fp, {encoding: "utf-8"});
           
           var s = "---";
           var pos = data.indexOf(s);
@@ -77,17 +72,7 @@ function LoadMarkdown (dir, post) {
           }
           elem.archive = date[1] + date[2];
           
-          if (post) {
-            if (MonthArchiveNumber.hasOwnProperty(elem.archive)) {
-              MonthArchiveNumber[elem.archive] = MonthArchiveNumber[elem.archive] + 1;
-            } else {
-              MonthArchiveNumber[elem.archive] = 1;
-            }
-            
-            if (MonthArchive.indexOf(elem.archive) == -1) {
-              MonthArchive.push(elem.archive);
-            }
-          
+          if (post) {          
             elem.accessible = header.match(/accessible:\ ([^\0\n]+)\n/);
             if (elem.accessible) {
               elem.accessible = elem.accessible[1];
@@ -98,16 +83,6 @@ function LoadMarkdown (dir, post) {
             elem.category = header.match(/category:\ ([^\0\n]+)\n/);
             if (elem.category) {
               elem.category = elem.category[1];
-              
-              if (Categories.indexOf(elem.category) == -1) {
-                Categories.push(elem.category);
-              }
-              
-              if (CategoriesNumber.hasOwnProperty(elem.category)) {
-                CategoriesNumber[elem.category]++;
-              } else {
-                CategoriesNumber[elem.category] = 1;
-              }
             } else {
               elem.category = "";
             }
@@ -132,19 +107,118 @@ function LoadMarkdown (dir, post) {
 		  return b.getTime() - a.getTime();
 		});
     
-    MonthArchive.sort(function (a, b) {
-      if (a < b) return 1;
-      if (a > b) return -1;
-      return 0;
-    });
-    
     return result;
 	} else {
 		throw "fail to load dir";
 	}
 }
 
-function CreatePost (req, res, callback) {
+function Load () {
+  Cache = {
+    Posts: [],
+    Articles: [],
+    Categories: {},
+    Archives: {},
+  };
+  
+  Cache.Posts = LoadMarkdown("posts", true);
+  Cache.Articles = LoadMarkdown("articles");
+  
+  Cache.Posts.forEach(function (item) {
+    if (item.category && item.category.length) {
+      if (Cache.Categories.hasOwnProperty(item.category)) {
+        Cache.Categories[item.category]++;
+      } else {
+        Cache.Categories[item.category] = 1;
+      }
+    }
+    if (item.archive && item.archive.length) {
+      if (Cache.Archives.hasOwnProperty(item.archive)) {
+        Cache.Archives[item.archive]++;
+      } else {
+        Cache.Archives[item.archive] = 1;
+      }
+    }
+  });
+  
+  var categories = [];
+  var archives = [];
+  
+  for (var i in Cache.Categories) {
+    categories.push({name: i, value: Cache.Categories[i]});
+  }
+  
+  for (var i in Cache.Archives) {
+    archives.push({name: i, value: Cache.Archives[i]});
+  }
+  
+  if (categories.length > 1) {
+    categories.sort(function (a, b) {
+      if (a.value > b.value)
+        return 1;
+      if (a.value < b.value)
+        return -1;
+      return 0;
+    });
+    categories.reverse();
+  }
+  
+  if (archives.length > 1) {
+    archives.sort(function (a, b) {
+      if (a > b)
+        return 1;
+      if (a < b)
+        return -1;
+      return 0;
+    });
+    archives.reverse();
+  }
+  
+  Cache.Categories = categories;
+  Cache.Archives = archives;
+  
+  var ret = ["Loaded",
+    (new Date().toLocaleString()),
+    ":",
+    Cache.Posts.length, "posts,",
+    Cache.Articles.length, "articles,",
+    Cache.Archives.length, "archives,",
+    Cache.Categories.length, "categories"];
+  
+  ret = ret.join(" ");
+  console.log(ret);
+  return ret;
+}
+
+function Reload (req, res) {
+  res.json({ok: Load()});
+}
+
+function Find (id) {
+  for (var i = 0; i < Cache.Posts.length; i++) {
+    if (Cache.Posts[i].id == id) {
+      return {
+        ind: i,
+        type: "post",
+        obj: Cache.Posts[i]
+      };
+    }
+  }
+
+  for (var i = 0; i < Cache.Articles.length; i++) {
+    if (Cache.Articles[i].id == id) {
+      return {
+        ind: i,
+        type: "article",
+        obj: Cache.Articles[i]
+      };
+    }
+  }
+  
+  return null;
+}
+
+function CreatePost (req, res) {
   var title = req.body.title;
   var date = req.body.date;
   var key = req.body.key;
@@ -185,18 +259,8 @@ function CreatePost (req, res, callback) {
     category = req.body.category.trim();
   }
   
-  for (var i = 0; i < Posts.length; i++) {
-    if (Posts[i].title == title)
-      return res.json({message: "title conflict post"});
-  }
-  
-  for (var i = 0; i < Articles.length; i++) {
-    if (Articles[i].title == title)
-      return res.json({message: "title conflict article"});
-  }
-  
   var type = "post";
-  if (req.body.type && typeof req.body.category == "string" && req.body.type == "article") {
+  if (req.body.type && typeof req.body.type == "string" && req.body.type == "article") {
     type = "article";
   }
 
@@ -210,50 +274,36 @@ function CreatePost (req, res, callback) {
     
     var id = uuid.v1();
     
-    var path = util.format(database + "posts/%s/%s/%s.md", year, month, id);
+    var path = util.format(DATABASE + "posts/%s/%s/%s.md", year, month, id);
      
-    if (!fs.existsSync(util.format(database + "posts/%s", year))) {
-      fs.mkdirSync(util.format(database + "posts/%s", year));
+    if (!fs.existsSync(util.format(DATABASE + "posts/%s", year))) {
+      fs.mkdirSync(util.format(DATABASE + "posts/%s", year));
     }
     
-    if (!fs.existsSync(util.format(database + "posts/%s/%s", year, month))) {
-      fs.mkdirSync(util.format(database + "posts/%s/%s", year, month));
+    if (!fs.existsSync(util.format(DATABASE + "posts/%s/%s", year, month))) {
+      fs.mkdirSync(util.format(DATABASE + "posts/%s/%s", year, month));
     }
     
     fs.writeFile(path, util.format("title: %s\ndate: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
       title, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
-      if(err) throw err;
-      Posts.unshift({
-        id: id,
-        title: title,
-        dir: "posts/" + year + "/" + month,
-        content: content,
-        date: date,
-        category: category,
-        accessible: accessible
-      });
-      
-      if (category.length && Categories.indexOf(category) == -1) {
-        Categories.push(category);
+      if(err) {
+        console.log(err);
+        return res.json({message: err});
       }
-      
+      Load();
       res.json({success: "ok"});
     });
   } else {
     var id = uuid.v1();
-    var path = util.format(database + "articles/%s.md", id);
+    var path = util.format(DATABASE + "articles/%s.md", id);
     
     fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s",
       title, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
-      if(err) throw err;
-      Articles.unshift({
-        id: id,
-        title: title,
-        dir: "articles",
-        content: content,
-        date: date
-      });
-      
+      if(err) {
+        console.log(err);
+        return res.json({message: err});
+      }
+      Load();
       res.json({success: "ok"});
     });
   }
@@ -310,68 +360,32 @@ function EditPost (req, res, callback) {
     return res.json({message: "date invalid!"});
   }
   
-  var old = null;
-  var type = "";
-  var pos = -1;
+  var old = Find(id);
   
-  if (pos == -1) {
-    type = "post";
-    for (var i = 0; i < Posts.length; i++) {
-      if (Posts[i].id == id) {
-        old = Posts[i];
-        pos = i;
-      }
-    }
-  }
-  
-  if (pos == -1) {
-    type = "article";
-    for (var i = 0; i < Articles.length; i++) {
-      if (Articles[i].id == id) {
-        old = Articles[i];
-        pos = i;
-      }
-    }
-  }
-  
-  if (pos == -1) {
+  if (!old) {
     return res.json({message: "not found"});
   }
   
-  var path = database + old.dir + "/" + id + ".md";
+  var path = DATABASE + old.obj.dir + "/" + id + ".md";
   
-  if (type == "post") {
+  if (old.type == "post") {
     fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
-      title, old.date, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
-      if(err) throw err;
-      
-      if (category.length && Categories.indexOf(category) == -1) {
-        Categories.push(category);
+      title, old.obj.date, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
+      if(err) {
+        console.log(err);
+        return res.json({message: err});
       }
-      Posts[pos] = {
-        id: id,
-        title: title,
-        dir: old.dir,
-        content: content,
-        date: old.date,
-        edit: date,
-        category: category,
-        accessible: accessible
-      };
+      Load();
       res.json({success: "ok"});
     });
-  } else if (type == "article") {
+  } else if (old.type == "article") {
     fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\n---\n\n%s",
-      title, old.date, date, content), {encoding: "utf-8"}, function (err) {
-      if(err) throw err;
-    Articles[pos] = {
-      id: id,
-      title: title,
-      dir: old.dir,
-      content: content,
-      date: old.date,
-      edit: date
-    };
+      title, old.obj.date, date, content), {encoding: "utf-8"}, function (err) {
+      if(err) {
+        console.log(err);
+        return res.json({message: err});
+      }
+      Load();
       res.json({success: "ok"});
     });
   }
@@ -391,51 +405,28 @@ function DeletePost (req, res, callback) {
   if (!key || key.trim() == "") {
     return res.json({message: "key can't be empty!"});
   }
-  
-  id = id.trim();
-  key = key.trim();
-  
-  var old = null;
-  var type = "";
-  var pos = -1;
-  
-  if (pos == -1) {
-    type = "post";
-    for (var i = 0; i < Posts.length; i++) {
-      if (Posts[i].id == id) {
-        old = Posts[i];
-        pos = i;
-      }
-    }
-  }
-  
-  if (pos == -1) {
-    type = "article";
-    for (var i = 0; i < Articles.length; i++) {
-      if (Articles[i].id == id) {
-        old = Articles[i];
-        pos = i;
-      }
-    }
-  }
-  
-  if (pos == -1) {
-    return res.json({message: "not found"});
-  }
 
   if (key != config.get("key")) {
     return res.json({message: "key don't match!"});
   }
   
-  var path = database + old.dir + "/" + id + ".md";
+  id = id.trim();
+  key = key.trim();
+  
+  var old = Find(id);
+  
+  if (!old) {
+    return res.json({message: "not found"});
+  }
+  
+  var path = DATABASE + old.obj.dir + "/" + id + ".md";
   
   fs.unlink(path, function (err) {
-    if(err) throw err;
-    if (type == "post") {
-      Posts.splice(pos, 1);
-    } else if (type == "article") {
-      Articles.splice(pos, 1);
+    if(err) {
+      console.log(err);
+      return res.json({message: err});
     }
+    Load();
     res.json({success: "ok"});
   });
 }
@@ -443,15 +434,10 @@ function DeletePost (req, res, callback) {
 
 
 function GetPage (req, res) {
-  var start = parseInt(req.body.start);
-  var number = parseInt(req.body.number);
+  var page = parseInt(req.body.page);
   
-  if (isNaN(start) || isNaN(number) || start < 0 || number <= 0) {
+  if (isNaN(page) || page < 0) {
     return res.json({message: "invalid arguments"});
-  }
-  
-  if (start >= Posts.length) {
-    return res.json({message: "out of range"});
   }
   
   var private = false;
@@ -466,7 +452,7 @@ function GetPage (req, res) {
     posts: []
   };
   
-  var list = Posts;
+  var list = Cache.Posts;
   
   if (private == false) {
     list = list.filter(function (item) {
@@ -490,8 +476,17 @@ function GetPage (req, res) {
   }
   
   result.count = list.length;
+  result.itemOfPage = config.get("itemOfPage");
   
-  while (number) {    
+  var start = (page - 1) * result.itemOfPage;
+  
+  if (start >= list.length) {
+    return res.json({message: "out of range"});
+  }
+  
+  var number = result.itemOfPage;
+  
+  while (number) {
     if (start >= list.length) {
       break;
     }
@@ -500,22 +495,22 @@ function GetPage (req, res) {
     number--;
     start++;
   }
+  
   return res.json(result);
 }
 
 function GetInfo (req, res) {
   var result= {};
-  result.articles = Articles;
-  result.categories = Categories;
-  result.categoriesNumber = CategoriesNumber;
-  result.archives = MonthArchive;
-  result.archivesNumber = MonthArchiveNumber;
+  result.articles = Cache.Articles;
+  result.categories = Cache.Categories;
+  result.archives = Cache.Archives;
   
-  result.config = {};
-  result.config.siteName = config.get("siteName"),
-  result.config.siteSubtitle = config.get("siteSubtitle"),
-  result.config.itemOfPage = config.get("itemOfPage"),
-  result.config.url = config.get("url")
+  result.config = {
+    siteName: config.get("siteName"),
+    siteSubtitle: config.get("siteSubtitle"),
+    itemOfPage: config.get("itemOfPage"),
+    url: config.get("url")
+  };
   
   return res.json(result);
 }
@@ -560,37 +555,21 @@ function SetConfig (req, res) {
 function GetContent (req, res) {
   var id = req.body.id;
   
-  if (typeof id != "string" || id.trim().length <= 0) {
-    return res.json({message: "invalid arguments"});
+  var old = Find(id);
+  
+  if (!old) {
+    return res.json({message: "not found"});
   }
   
-  function Result (obj, type) {
-    var ret = {};
-    for (k in obj) {
-      ret[k] = obj[k];
-    }
-    ret.type = type;
-    ret.categories = Categories;
-    res.json(ret);
+  var ret = {};
+  for (k in old.obj) {
+    ret[k] = old.obj[k];
   }
-  
-  for (var i = 0; i < Articles.length; i++) {
-    if (id == Articles[i].id) {
-      return Result(Articles[i], "article");
-    }
-  }
-  
-  for (var i = 0; i < Posts.length; i++) {
-    if (id == Posts[i].id) {
-      return Result(Posts[i], "post");
-    }
-  }
-  
-  return res.json({message: "not found"});
+  ret.type = old.type;
+  res.json(ret);
 }
 
-Posts = LoadMarkdown("posts", true);
-Articles = LoadMarkdown("articles");
+Load();
 
 exports.info = GetInfo;
 exports.page = GetPage;
@@ -599,3 +578,4 @@ exports.edit = EditPost;
 exports.del = DeletePost;
 exports.content = GetContent;
 exports.config = SetConfig;
+exports.reload = Reload;
