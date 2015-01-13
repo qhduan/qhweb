@@ -18,6 +18,15 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
   $scope.maxPage = 1;
   $scope.info = "";
   $scope.posts = [];
+  $scope.search = "";
+  
+  $scope.Search = function (s) {
+    if (s.trim().length) {
+      window.location.href = "#/main?search=" + encodeURIComponent(s);
+    } else {
+      window.location.href = "#/main";
+    }
+  };
   
   $scope.Reload = function () {
     $http.post("/reload")
@@ -99,6 +108,12 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
       $scope.archive = "";
     }
     
+    if ($routeParams.search) {
+      $scope.search = $routeParams.search;
+    } else {
+      $scope.search = "";
+    }
+    
     var obj = {
       page: $scope.page
     };
@@ -109,6 +124,10 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
     
     if ($scope.archive.length) {
       obj.archive = $scope.archive;
+    }
+    
+    if ($scope.search.length) {
+      obj.search = $scope.search;
     }
     
     if ($rootScope.qhwebKey.length) {
