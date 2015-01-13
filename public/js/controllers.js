@@ -61,7 +61,7 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
     }
     
     if ($scope.search && $scope.search.length) {
-      p.push("search=" + $scope.search);
+      p.push("search=" + encodeURIComponent($scope.search));
     }
     
     if (page > 1) {
