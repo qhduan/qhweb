@@ -60,6 +60,10 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
       p.push("archive=" + $scope.archive);
     }
     
+    if ($scope.search && $scope.search.length) {
+      p.push("search=" + $scope.search);
+    }
+    
     if (page > 1) {
       p.push("page=" + page);
     }
