@@ -92,14 +92,16 @@
       qhwebKey = key;
     };
     
-    $rootScope.Verify = function () {
+    $rootScope.Verify = function (callback) {
       alertify.prompt("Please input your key:", function (evt, value) {
         if (evt && value.trim().length) {
           $http.post("/verify", {key: value})
             .success(function (result) {
               if (result.ok) {
                 qhwebKey = value;
-                alertify.alert("Congratulation, your key is right!");
+                alertify.alert("Congratulation, your key is right!", function () {
+                  if (typeof callback == "function") callback();
+                });
               } else {
                 alertify.alert(result.message || "System Error");
               }

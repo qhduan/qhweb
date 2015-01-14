@@ -138,18 +138,28 @@ function Load () {
   var archives = {};
   
   Cache.Posts.forEach(function (item, ind, arr) {
-    if (ind != 0) {
-      arr[ind].prev = {
-        id: arr[ind-1].id,
-        title: arr[ind-1].title
-      };
+    if (ind != 0 && item.accessible != "private") {
+      for (var i = ind-1; i >= 0; i--) {
+        if (arr[i].accessible != "private") {
+          arr[ind].prev = {
+            id: arr[i].id,
+            title: arr[i].title
+          };
+          break;
+        }
+      }
     }
     
-    if (ind != (arr.length - 1)) {
-      arr[ind].next = {
-        id: arr[ind+1].id,
-        title: arr[ind+1].title
-      };
+    if (ind != (arr.length - 1) && item.accessible != "private") {
+      for (var i = ind+1; i < arr.length; i++) {
+        if (arr[i].accessible != "private") {
+          arr[ind].next = {
+            id: arr[i].id,
+            title: arr[i].title
+          };
+          break;
+        }
+      }
     }
     
     Cache.Index[item.id] = item; // 建立从id->obj的post索引
