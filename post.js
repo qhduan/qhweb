@@ -116,15 +116,31 @@ function Load () {
     Index: {}
   };
   
+  // 把post和article都读取出来
   Cache.Posts = LoadMarkdown("posts", "post");
   Cache.Articles = LoadMarkdown("articles", "article");
+  
+  // 按照文章的最后时间进行排序，从后向前（大到小）
+  if (Cache.Articles.length > 1) {
+    Cache.Articles.sort(function (a, b) {
+      var adate = a.date;
+      var bdate = b.date;
+      if (a.edit && a.edit.length) adate = a.edit;
+      if (b.edit && b.edit.length) bdate = b.edit;
+      if (adate > bdate) return 1;
+      if (adate < bdate) return -1;
+      return 0;
+    });
+    Cache.Articles.reverse();
+  }
   
   var categories = {};
   var archives = {};
   
   Cache.Posts.forEach(function (item) {
-    Cache.Index[item.id] = item;
+    Cache.Index[item.id] = item; // 建立从id->obj的post索引
     
+    // 统计category，放入到一个object
     if (item.category && item.category.length) {
       if (categories.hasOwnProperty(item.category)) {
         categories[item.category]++;
@@ -133,6 +149,7 @@ function Load () {
       }
     }
     
+    // 统计archive，让入到一个object
     if (item.archive && item.archive.length) {
       if (archives.hasOwnProperty(item.archive)) {
         archives[item.archive]++;
@@ -143,17 +160,18 @@ function Load () {
   });
   
   Cache.Articles.forEach(function (item) {
-    Cache.Index[item.id] = item;
+    Cache.Index[item.id] = item; // 建立从id->obj的article索引
   });
   
+  // 把统计出来的categories和archives从object转换成array
   for (var i in categories) {
     Cache.Categories.push({name: i, value: categories[i]});
   }
-  
   for (var i in archives) {
     Cache.Archives.push({name: i, value: archives[i]});
   }
   
+  // 对categories进行排序，按照其中的帖子数量从大到小排序
   if (Cache.Categories.length > 1) {
     Cache.Categories.sort(function (a, b) {
       if (a.value > b.value)
@@ -165,6 +183,7 @@ function Load () {
     Cache.Categories.reverse();
   }
   
+  // 对archives进行排序，按照时间顺序从后向前（大到小）
   if (Cache.Archives.length > 1) {
     Cache.Archives.sort(function (a, b) {
       if (a > b)
