@@ -1,3 +1,5 @@
+"use strict";
+
 var fs = require("fs");
 var util = require("util");
 var uuid = require("node-uuid")
@@ -7,38 +9,27 @@ var tool = require("./tool");
 
 var Cache = {}; // 保存各种缓存
 
-var DATABASE = __dirname + "/database/";
 
-function ExistsOrCreate (dir) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir);
-  }
-}
-ExistsOrCreate(DATABASE); // 判断根目录下的database目录是否存在，不存在则创建
-ExistsOrCreate(DATABASE + "posts"); // 帖子目录
-ExistsOrCreate(DATABASE + "articles"); // 文章目录
-ExistsOrCreate(DATABASE + "upload"); // 附件目录
-
-
-function LoadMarkdown (dir, post) {
+// from dir load post or article
+function LoadMarkdown (dir, type) {
   
-	if (fs.statSync(DATABASE + dir).isDirectory()) {
+	if (fs.statSync(tool.DATABASE + dir).isDirectory()) {
 		var result = [];
 		var list = [];
 		list.push(dir);
 		while (list.length > 0) {
 			var d = list.pop();
-			var l = fs.readdirSync(DATABASE + d);
+			var l = fs.readdirSync(tool.DATABASE + d);
 			for (var i in l) {
 				var fn = l[i];
 				var fp = d + "/" + fn;
-				if (fs.statSync(DATABASE + fp).isDirectory()) {
+				if (fs.statSync(tool.DATABASE + fp).isDirectory()) {
 					list.push(fp);
-				} else if (fs.statSync(DATABASE + fp).isFile() && fn.match(/.md$/)) {
+				} else if (fs.statSync(tool.DATABASE + fp).isFile() && fn.match(/.md$/)) {
           
           var fid = fn.substr(0, fn.length - 3); // cut off ".md"
           
-					var data = fs.readFileSync(DATABASE + fp, {encoding: "utf-8"});
+					var data = fs.readFileSync(tool.DATABASE + fp, {encoding: "utf-8"});
           
           var s = "---";
           var pos = data.indexOf(s);
@@ -54,6 +45,7 @@ function LoadMarkdown (dir, post) {
 					var elem = {};
           elem.id = fid;
 					elem.dir = d;
+          elem.type = type;
           
 					elem.title = header.match(/title:\ ([^\0\n]+)\n/);
 					elem.date = header.match(/date:\ ([^\0\n]+)\n/);
@@ -72,7 +64,7 @@ function LoadMarkdown (dir, post) {
           }
           elem.archive = date[1] + date[2];
           
-          if (post) {          
+          if (type == "post") {          
             elem.accessible = header.match(/accessible:\ ([^\0\n]+)\n/);
             if (elem.accessible) {
               elem.accessible = elem.accessible[1];
@@ -113,136 +105,108 @@ function LoadMarkdown (dir, post) {
 	}
 }
 
+
+// load posts and articles
 function Load () {
   Cache = {
     Posts: [],
     Articles: [],
-    Categories: {},
-    Archives: {},
+    Categories: [],
+    Archives: [],
+    Index: {}
   };
   
-  Cache.Posts = LoadMarkdown("posts", true);
-  Cache.Articles = LoadMarkdown("articles");
+  Cache.Posts = LoadMarkdown("posts", "post");
+  Cache.Articles = LoadMarkdown("articles", "article");
+  
+  var categories = {};
+  var archives = {};
   
   Cache.Posts.forEach(function (item) {
+    Cache.Index[item.id] = item;
+    
     if (item.category && item.category.length) {
-      if (Cache.Categories.hasOwnProperty(item.category)) {
-        Cache.Categories[item.category]++;
+      if (categories.hasOwnProperty(item.category)) {
+        categories[item.category]++;
       } else {
-        Cache.Categories[item.category] = 1;
+        categories[item.category] = 1;
       }
     }
+    
     if (item.archive && item.archive.length) {
-      if (Cache.Archives.hasOwnProperty(item.archive)) {
-        Cache.Archives[item.archive]++;
+      if (archives.hasOwnProperty(item.archive)) {
+        archives[item.archive]++;
       } else {
-        Cache.Archives[item.archive] = 1;
+        archives[item.archive] = 1;
       }
     }
   });
   
-  var categories = [];
-  var archives = [];
+  Cache.Articles.forEach(function (item) {
+    Cache.Index[item.id] = item;
+  });
   
-  for (var i in Cache.Categories) {
-    categories.push({name: i, value: Cache.Categories[i]});
+  for (var i in categories) {
+    Cache.Categories.push({name: i, value: categories[i]});
   }
   
-  for (var i in Cache.Archives) {
-    archives.push({name: i, value: Cache.Archives[i]});
+  for (var i in archives) {
+    Cache.Archives.push({name: i, value: archives[i]});
   }
   
-  if (categories.length > 1) {
-    categories.sort(function (a, b) {
+  if (Cache.Categories.length > 1) {
+    Cache.Categories.sort(function (a, b) {
       if (a.value > b.value)
         return 1;
       if (a.value < b.value)
         return -1;
       return 0;
     });
-    categories.reverse();
+    Cache.Categories.reverse();
   }
   
-  if (archives.length > 1) {
-    archives.sort(function (a, b) {
+  if (Cache.Archives.length > 1) {
+    Cache.Archives.sort(function (a, b) {
       if (a > b)
         return 1;
       if (a < b)
         return -1;
       return 0;
     });
-    archives.reverse();
+    Cache.Archives.reverse();
   }
   
-  Cache.Categories = categories;
-  Cache.Archives = archives;
-  
   var ret = ["Loaded",
-    (new Date().toLocaleString()),
     ":",
     Cache.Posts.length, "posts,",
     Cache.Articles.length, "articles,",
     Cache.Archives.length, "archives,",
-    Cache.Categories.length, "categories"];
+    Cache.Categories.length, "categories",
+    "---",
+    (new Date().toLocaleString())];
   
   ret = ret.join(" ");
   console.log(ret);
   return ret;
 }
 
-function Reload (req, res) {
-  res.json({ok: Load()});
-}
 
-function Find (id) {
-  for (var i = 0; i < Cache.Posts.length; i++) {
-    if (Cache.Posts[i].id == id) {
-      return {
-        ind: i,
-        type: "post",
-        obj: Cache.Posts[i]
-      };
-    }
-  }
-
-  for (var i = 0; i < Cache.Articles.length; i++) {
-    if (Cache.Articles[i].id == id) {
-      return {
-        ind: i,
-        type: "article",
-        obj: Cache.Articles[i]
-      };
-    }
-  }
-  
-  return null;
-}
-
-function CreatePost (req, res) {
+// create a post in system
+function CreatePostHandle (req, res) {
   var title = req.body.title;
   var date = req.body.date;
   var key = req.body.key;
   var content = req.body.content;
   
-  if (!title || title.trim() == "") {
-    return res.json({message: "title can't be empty!"});
-  }
+  if (!title || title.trim() == "") return res.json({message: "title can't be empty!"});
   
-  if (!date || date.trim() == "") {
-    return res.json({message: "date can't be empty!"});
-  }
+  if (!date || date.trim() == "") return res.json({message: "date can't be empty!"});
   
-  if (!key || key.trim() == "") {
-    return res.json({message: "key can't be empty!"});
-  }
+  if (!key || key.trim() == "") return res.json({message: "key can't be empty!"});
   
-  if (key != config.get("key")) {
-    return res.json({message: "key don't match!"});
-  }
+  if (key != config.get("key")) return res.json({message: "key don't match!"});
   
-  if (!content || content.trim() == "") {
-    return res.json({message: "content can't be empty!"});
-  }
+  if (!content || content.trim() == "") return res.json({message: "content can't be empty!"});
   
   title = title.trim();
   date = date.trim();
@@ -274,14 +238,14 @@ function CreatePost (req, res) {
     
     var id = uuid.v1();
     
-    var path = util.format(DATABASE + "posts/%s/%s/%s.md", year, month, id);
+    var path = util.format(tool.DATABASE + "posts/%s/%s/%s.md", year, month, id);
      
-    if (!fs.existsSync(util.format(DATABASE + "posts/%s", year))) {
-      fs.mkdirSync(util.format(DATABASE + "posts/%s", year));
+    if (!fs.existsSync(util.format(tool.DATABASE + "posts/%s", year))) {
+      fs.mkdirSync(util.format(tool.DATABASE + "posts/%s", year));
     }
     
-    if (!fs.existsSync(util.format(DATABASE + "posts/%s/%s", year, month))) {
-      fs.mkdirSync(util.format(DATABASE + "posts/%s/%s", year, month));
+    if (!fs.existsSync(util.format(tool.DATABASE + "posts/%s/%s", year, month))) {
+      fs.mkdirSync(util.format(tool.DATABASE + "posts/%s/%s", year, month));
     }
     
     fs.writeFile(path, util.format("title: %s\ndate: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
@@ -295,7 +259,7 @@ function CreatePost (req, res) {
     });
   } else {
     var id = uuid.v1();
-    var path = util.format(DATABASE + "articles/%s.md", id);
+    var path = util.format(tool.DATABASE + "articles/%s.md", id);
     
     fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s",
       title, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
@@ -309,36 +273,26 @@ function CreatePost (req, res) {
   }
 }
 
-function EditPost (req, res, callback) {
+
+// edit exists post or article
+function EditPostHandle (req, res, callback) {
   var id = req.body.id;
   var title = req.body.title;
   var date = req.body.date;
   var key = req.body.key;
   var content = req.body.content;
   
-  if (!id || id.trim() == "") {
-    return res.json({message: "id can't be empty!"});
-  }
+  if (!id || id.trim() == "") return res.json({message: "invalid id"});
   
-  if (!title || title.trim() == "") {
-    return res.json({message: "title can't be empty!"});
-  }
+  if (!title || title.trim() == "") return res.json({message: "invalid title"});
   
-  if (!date || date.trim() == "") {
-    return res.json({message: "date can't be empty!"});
-  }
+  if (!date || date.trim() == "") return res.json({message: "invalid date"});
   
-  if (!key || key.trim() == "") {
-    return res.json({message: "key can't be empty!"});
-  }
+  if (!key || key.trim() == "") return res.json({message: "invalid key"});
   
-  if (key != config.get("key")) {
-    return res.json({message: "key don't match!"});
-  }
+  if (key != config.get("key")) return res.json({message: "key don't match"});
   
-  if (!content || content.trim() == "") {
-    return res.json({message: "content can't be empty!"});
-  }
+  if (!content || content.trim() == "") return res.json({message: "invalid content"});
   
   id = id.trim();
   title = title.trim();
@@ -357,20 +311,17 @@ function EditPost (req, res, callback) {
   }
   
   if (!date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/)) {
-    return res.json({message: "date invalid!"});
+    return res.json({message: "invalid date format"});
   }
   
-  var old = Find(id);
+  var old = Cache.Index[id];
+  if (!old) return res.json({message: "not found"});
   
-  if (!old) {
-    return res.json({message: "not found"});
-  }
-  
-  var path = DATABASE + old.obj.dir + "/" + id + ".md";
+  var path = tool.DATABASE + old.dir + "/" + id + ".md";
   
   if (old.type == "post") {
     fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
-      title, old.obj.date, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
+      title, old.date, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
       if(err) {
         console.log(err);
         return res.json({message: err});
@@ -380,7 +331,7 @@ function EditPost (req, res, callback) {
     });
   } else if (old.type == "article") {
     fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\n---\n\n%s",
-      title, old.obj.date, date, content), {encoding: "utf-8"}, function (err) {
+      title, old.date, date, content), {encoding: "utf-8"}, function (err) {
       if(err) {
         console.log(err);
         return res.json({message: err});
@@ -393,33 +344,24 @@ function EditPost (req, res, callback) {
 }
 
 
-
-function DeletePost (req, res, callback) {
+// delete exists post or article
+function DeletePostHandle (req, res, callback) {
   var id = req.body.id;
   var key = req.body.key;
   
-  if (!id || id.trim() == "") {
-    return res.json({message: "id can't be empty!"});
-  }
+  if (!id || id.trim() == "") return res.json({message: "invalid id"});
   
-  if (!key || key.trim() == "") {
-    return res.json({message: "key can't be empty!"});
-  }
+  if (!key || key.trim() == "") return res.json({message: "invalid key"});
 
-  if (key != config.get("key")) {
-    return res.json({message: "key don't match!"});
-  }
+  if (key != config.get("key")) return res.json({message: "key don't match"});
   
   id = id.trim();
   key = key.trim();
   
-  var old = Find(id);
+  var old = Cache.Index[id];
+  if (!old) return res.json({message: "not found"});
   
-  if (!old) {
-    return res.json({message: "not found"});
-  }
-  
-  var path = DATABASE + old.obj.dir + "/" + id + ".md";
+  var path = tool.DATABASE + old.dir + "/" + id + ".md";
   
   fs.unlink(path, function (err) {
     if(err) {
@@ -432,29 +374,20 @@ function DeletePost (req, res, callback) {
 }
 
 
-
-function GetPage (req, res) {
+// return list of page
+function GetPageHandle (req, res) {
   var page = parseInt(req.body.page);
   
-  if (isNaN(page) || page < 0) {
-    return res.json({message: "invalid arguments"});
+  if (isNaN(page) || page < 0) return res.json({message: "invalid arguments"});
+  
+  var private_mode = false;
+  if (req.body.key && req.body.key == config.get("key")) {
+      private_mode = true;
   }
-  
-  var private = false;
-  
-  if (req.body.key) {
-    if (req.body.key == config.get("key")) {
-      private = true;
-    }
-  }
-  
-  var result = {
-    posts: []
-  };
   
   var list = Cache.Posts;
   
-  if (private == false) {
+  if (private_mode == false) {
     list = list.filter(function (item) {
       if (item.accessible != "private") return true;
       return false;
@@ -505,8 +438,12 @@ function GetPage (req, res) {
     }
   }
   
-  result.count = list.length;
-  result.itemOfPage = config.get("itemOfPage");
+  
+  var result = {
+    posts: [],
+    count: list.length,
+    itemOfPage: config.get("itemOfPage")
+  };
   
   var start = (page - 1) * result.itemOfPage;
   
@@ -529,7 +466,9 @@ function GetPage (req, res) {
   return res.json(result);
 }
 
-function GetInfo (req, res) {
+
+// return some date to client, include articles, categories, archives, config
+function GetInfoHandle (req, res) {
   var result= {};
   result.articles = Cache.Articles;
   result.categories = Cache.Categories;
@@ -545,67 +484,24 @@ function GetInfo (req, res) {
   return res.json(result);
 }
 
-function SetConfig (req, res) {
-  var siteName = req.body.siteName;
-  var siteSubtitle = req.body.siteSubtitle;
-  var url = req.body.url;
-  var itemOfPage = req.body.itemOfPage;
-  var key = req.body.key;
-  
-  if (key != config.get("key")) {
-    return res.json({message: "invalid key"});
-  }
-  
-  itemOfPage = parseInt(itemOfPage);
-  
-  if (isNaN(itemOfPage) || itemOfPage <= 0) {
-    return res.json({message: "invalid item of page"});
-  }
-  
-  if (siteName) {
-    config.set("siteName", siteName);
-  }
-  
-  if (siteSubtitle) {
-    config.set("siteSubtitle", siteSubtitle);
-  }
-  
-  if (url) {
-    config.set("url", url);
-  }
-  
-  if (itemOfPage) {
-    config.set("itemOfPage", itemOfPage);
-  }
-  
-  res.json({ok: "success"});
-  
-}
 
-function GetContent (req, res) {
+// return content of post/article
+function GetContentHandle (req, res) {
   var id = req.body.id;
   
-  var old = Find(id);
+  var old = Cache.Index[id];
+  if (!old) return res.json({message: "not found"});
   
-  if (!old) {
-    return res.json({message: "not found"});
-  }
-  
-  var ret = {};
-  for (k in old.obj) {
-    ret[k] = old.obj[k];
-  }
-  ret.type = old.type;
-  res.json(ret);
+  res.json(old);
 }
+
+
 
 Load();
 
-exports.info = GetInfo;
-exports.page = GetPage;
-exports.create = CreatePost;
-exports.edit = EditPost;
-exports.del = DeletePost;
-exports.content = GetContent;
-exports.config = SetConfig;
-exports.reload = Reload;
+exports.GetInfoHandle = GetInfoHandle;
+exports.GetPageHandle = GetPageHandle;
+exports.CreatePostHandle = CreatePostHandle;
+exports.EditPostHandle = EditPostHandle;
+exports.DeletePostHandle = DeletePostHandle;
+exports.GetContentHandle = GetContentHandle;
