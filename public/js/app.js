@@ -34,8 +34,34 @@
       });
   }]);
 
-  qhweb.run(["$rootScope", "$location", "$http",
-    function ($rootScope, $location, $http) {
+  qhweb.run(["$rootScope", "$location", "$http", "$document",
+    function ($rootScope, $location, $http, $document) {
+      
+    var keys = "";
+    $document.on("keypress", function (event) {
+      var k = String.fromCharCode(event.which).match(/\w/);
+      if (k) {
+        k = k[0].toLowerCase();
+        keys += k;
+        console.log(keys);
+        if (keys.match(/new$/)) {
+          keys = "";
+          window.location.href = "#/new";
+        }
+        if (keys.match(/config$/)) {
+          keys = "";
+          window.location.href = "#/config";
+        }
+        if (keys.match(/password$/)) {
+          keys = "";
+          window.location.href = "#/password";
+        }
+        if (keys.match(/main$/)) {
+          keys = "";
+          window.location.href = "#/main";
+        }
+      }
+    });
     
     var history = [];
     

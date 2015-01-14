@@ -49,25 +49,6 @@
                 </span>
               </form><!-- /input-group -->
               
-              <div style="padding-bottom: 10px;"><!-- manage button -->
-                <div ng-if="!HasKey()">
-                  <button class="btn btn-default" ng-click="Verify(GetPosts)">Verify</button>
-                </div>
-                <div ng-if="HasKey()">
-                  <div class="dropdown">
-                    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownManage1" data-toggle="dropdown" aria-expanded="true">
-                      Manage
-                      <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage1">
-                      <li role="presentation"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
-                      <li role="presentation"><a role="menuitem" tabindex="-1" href="#/config">Config</a></li>
-                      <li role="presentation"><a role="menuitem" tabindex="-1" href="#/password">Passwd</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div><!-- /manage button -->
-              
             </div>
           </div><!-- /panel -->
           
@@ -140,8 +121,28 @@
             
           </div><!-- /post list -->
           
+          
           <nav ng-show="posts && posts.length"><!-- pagination -->
-            <ul class="pagination">
+            <ul class="pagination" style="width: 100%;">
+    
+          <div class="pull-right" style="padding-bottom: 10px;"><!-- manage button -->
+            <div ng-if="!HasKey()">
+              <button class="btn btn-default" ng-click="Verify(GetPosts)">Verify</button>
+            </div>
+            <div ng-if="HasKey()">
+              <div class="dropdown">
+                <button class="btn btn-default dropdown-toggle" type="button" id="dropdownManage2" data-toggle="dropdown" aria-expanded="true">
+                  Manage
+                  <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage2">
+                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
+                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/config">Config</a></li>
+                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/password">Passwd</a></li>
+                </ul>
+              </div>
+            </div>
+          </div><!-- /manage button -->
               
               <li ng-if="page != 1"><!-- 不是第一页，显示正常第一页按钮 -->
                 <a href="#/main{{ param(1) }}" title="Firt p1">
@@ -205,25 +206,6 @@
               </li>
             </ul>
           </nav><!-- /pagination -->
-    
-          <div class="visible-xs-block visible-sm-block" style="padding-bottom: 10px;"><!-- manage button -->
-            <div ng-if="!HasKey()">
-              <button class="btn btn-default" ng-click="Verify(GetPosts)">Verify</button>
-            </div>
-            <div ng-if="HasKey()">
-              <div class="dropdown">
-                <button class="btn btn-default dropdown-toggle" type="button" id="dropdownManage2" data-toggle="dropdown" aria-expanded="true">
-                  Manage
-                  <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage2">
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/config">Config</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/password">Passwd</a></li>
-                </ul>
-              </div>
-            </div>
-          </div><!-- /manage button -->
           
         </div><!-- /row -->
       </div><!-- /container-fluid -->
