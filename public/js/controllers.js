@@ -271,10 +271,10 @@
         $scope.type = result.type;
         $scope.message = "";
         
-        var ta = document.createElement("textarea");
-        ta.value = result.content;
-        ta.style.display = "none";
-        document.getElementById("content").appendChild(ta);
+        $scope.prev = result.prev;
+        $scope.next = result.next;
+        
+        $scope.fetchContent = result.content;
         
         $scope.createDate = "Created: " + result.date;
         
@@ -290,7 +290,10 @@
           $scope.category = "Category: " + result.category;
         }
         
-        setTimeout(window.LoadEditor, 200);
+        setTimeout(function () {
+          $scope.$apply();
+          window.LoadEditor();
+        }, 10);
         
         $scope.del = function () {
           alertify.prompt("Please input your key:", function (evt, value) {
