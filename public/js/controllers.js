@@ -293,7 +293,7 @@
         setTimeout(function () {
           $scope.$apply();
           window.LoadEditor();
-        }, 10);
+        }, 200);
         
         $scope.del = function () {
           alertify.prompt("Please input your key:", function (evt, value) {

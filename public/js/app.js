@@ -43,7 +43,6 @@
       if (k) {
         k = k[0].toLowerCase();
         keys += k;
-        console.log(keys);
         if (keys.match(/new$/)) {
           keys = "";
           window.location.href = "#/new";
