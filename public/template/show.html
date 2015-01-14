@@ -1,47 +1,60 @@
 <div class="container" style="margin: 0px auto;">
   <div class="row">
-    <h1>
-      <a href="#" onclick="event.preventDefault();" ng-click="goBack()">
-        <span class="glyphicon glyphicon-home"></span>
-        Home
-      </a>
-      /
-      <a href="#/show/{{ id }}">
-        {{ title }}
-      </a>
-    </h1>
-    <hr>
+    <div class="container-fluid">
+      <h1>
+        <a href="#" onclick="event.preventDefault();" ng-click="GoBack()">
+          Home
+        </a>
+        /
+        <a href="#/show/{{ id }}">
+          {{ title }}
+        </a>
+      </h1>
+      <hr>
+    </div>
   </div>
 
   <div class="row">
     <div class="col-xs-12">
-      <div id="content" class="topic-content" style="font-size: 1.2em;">
+      <div ng-show="message && message.length" class="text-center">
+        <h3>{{ message }}</h3>
       </div>
+      <div id="content" class="topic-content" style="font-size: 1.2em;"></div>
     </div>
   </div>
   
   <div class="row">
-    <hr>
-    <div class="pull-right">
-      <div>{{ accessible }}</div>
-      
-      <div>{{ type }}</div>
-      
-      <div>{{ category }}</div>
-      
-      <div>{{ createDate }}</div>
-      
-      <div>{{ editDate }}</div>
+    <div class="container-fluid">
+      <hr>
+      <div class="pull-right">
+        <div>{{ accessible }}</div>
+        
+        <div>{{ type }}</div>
+        
+        <div>{{ category }}</div>
+        
+        <div>{{ createDate }}</div>
+        
+        <div>{{ editDate }}</div>
+      </div>
+      <br>
+      <div ng-if="!HasKey()">
+        <button class="btn btn-default btn-small" ng-click="Verify()">Verify</button>
+      </div>
+      <div ng-if="HasKey()">
+        <div class="dropdown">
+          <button class="btn btn-default dropdown-toggle" type="button" id="dropdownManage1" data-toggle="dropdown" aria-expanded="true">
+            Manage
+            <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage1">
+            <li role="presentation"><a role="menuitem" tabindex="-1" href="#/edit/{{ id }}">Edit</a></li>
+            <li role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="del()">Delete</a></li>
+          </ul>
+        </div>
+      </div>
+      <div style="min-height: 40px;"></div>
     </div>
-    <br>
-    <div ng-if="qhwebKey.length">
-      <a href="#/edit/{{ id }}" class="btn btn-default btn-small">Edit</a>
-      <button class="btn btn-default btn-small" ng-click="del()">Delete</button>
-    </div>
-    <div ng-if="!qhwebKey.length">
-      <button class="btn btn-default btn-small" ng-click="verify()">Verify</button>
-    </div>
-    <div style="min-height: 40px;"></div>
   </div>
 </div>
 

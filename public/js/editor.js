@@ -1,5 +1,5 @@
 (function () {
-  "use strict"
+  "use strict";
   
   // Editor的设置
   // Editor的载入是<div id="editor"></div>

@@ -1,149 +1,141 @@
+(function () {
+  "use strict";
+
+  var qhwebControllers = angular.module("qhwebControllers", []);
+
+  var qhwebConfig = null;
+  var qhwebArticles = null;
 
 
 
-var qhwebControllers = angular.module("qhwebControllers", []);
-
-
-
-var qhwebConfig = null;
-var qhwebArticles = null;
-
-
-
-qhwebControllers.controller("mainController", function ($rootScope, $scope, $routeParams, $http, $location) {
-  $scope.title = "title";
-  $scope.subtitle = "subtitle";
-  $scope.mainButton = {display: "none"};
-  $scope.pages = [];
-  $scope.maxPage = 1;
-  $scope.info = "";
-  $scope.posts = [];
-  $scope.search = "";
-  
-  $scope.Search = function (s) {
-    if (s.trim().length) {
-      window.location.href = "#/main?search=" + encodeURIComponent(s);
-    } else {
-      window.location.href = "#/main";
-    }
-  };
-  
-  $scope.Reload = function () {
-    $http.post("/reload")
-      .success(function (result) {
-        alertify.alert(result.ok || result.message || "System Error");
-      });
-  };
-  
-  $scope.GoArchive = function (choice) {
-    if (choice != "Archive" && choice != "") {
-      window.location.href = "#/main?archive=" + choice;
-    }
-  };
-  
-  $scope.range = function (n, page) {
-    var r = [];
-    for (var i = (page-n); i <= (page+n); i++) {
-      r.push(i);
-    }
-    return r;
-  };
-  
-  $scope.param = function (page) {
-    var p = [];
+  qhwebControllers.controller("mainController", [
+    "$scope", "$routeParams", "$http", "Blog", "Util",
+    function ($scope, $routeParams, $http, Blog, Util) {
     
-    if ($scope.category && $scope.category.length) {
-      p.push("category=" + $scope.category);
-    }
+    $scope.title = "title";
+    $scope.subtitle = "subtitle";
+    $scope.mainButton = {display: "none"};
+    $scope.pages = [];
+    $scope.maxPage = 1;
+    $scope.info = "";
+    $scope.posts = [];
+    $scope.search = "";
+    $scope.message = "Loading...";
     
-    if ($scope.archive && $scope.archive.length) {
-      p.push("archive=" + $scope.archive);
-    }
-    
-    if ($scope.search && $scope.search.length) {
-      p.push("search=" + encodeURIComponent($scope.search));
-    }
-    
-    if (page > 1) {
-      p.push("page=" + page);
-    }
-    
-    if (p.length <= 0) return "";
-    
-    return "?" + p.join("&");
-  };
-    
-  if (qhwebConfig) {
-    $scope.title = qhwebConfig.siteName;
-    $scope.subtitle = qhwebConfig.siteSubtitle;
-    $rootScope.title = qhwebConfig.siteName;
-  }
-  
-  function GetInfo () {    
-    $http.post("/info")
-      .success(function (result) {
-        $scope.articles = result.articles;
-        $scope.categories = result.categories;
-        $scope.archives = result.archives;
-        
-        qhwebConfig = result.config;
-        $scope.title = qhwebConfig.siteName;
-        $scope.subtitle = qhwebConfig.siteSubtitle;
-        $rootScope.title = qhwebConfig.siteName;
-      });
-  }
-  
-  function GetPosts () {    
-    if ($routeParams.page && parseInt($routeParams.page)) {
-      $scope.page = parseInt($routeParams.page);
-    } else {
-      $scope.page = 1;
-    }
-    
-    if ($routeParams.category) {
-      $scope.category = $routeParams.category;
-    } else {
-      $scope.category = "";
-    }
-    
-    if ($routeParams.archive) {
-      $scope.archive = $routeParams.archive;
-    } else {
-      $scope.archive = "";
-    }
-    
-    if ($routeParams.search) {
-      $scope.search = $routeParams.search;
-    } else {
-      $scope.search = "";
-    }
-    
-    var obj = {
-      page: $scope.page
+    $scope.Search = function (s) {
+      if (s.trim().length) {
+        Util.Go("#/main?search=" + encodeURIComponent(s));
+      } else {
+        Util.Go("#/main");
+      }
     };
     
-    if ($scope.category.length) {
-      obj.category = $scope.category;
+    $scope.GoArchive = function (choice) {
+      if (choice != "Archive" && choice != "") {
+        Util.Go("#/main?archive=" + choice);
+      }
+    };
+    
+    $scope.range = function (n, page) {
+      var r = [];
+      for (var i = (page-n); i <= (page+n); i++) {
+        r.push(i);
+      }
+      return r;
+    };
+    
+    $scope.param = function (page) {
+      var p = [];
+      
+      if ($scope.category && $scope.category.length) {
+        p.push("category=" + $scope.category);
+      }
+      
+      if ($scope.archive && $scope.archive.length) {
+        p.push("archive=" + $scope.archive);
+      }
+      
+      if ($scope.search && $scope.search.length) {
+        p.push("search=" + encodeURIComponent($scope.search));
+      }
+      
+      if (page > 1) {
+        p.push("page=" + page);
+      }
+      
+      if (p.length <= 0) return "";
+      
+      return "?" + p.join("&");
+    };
+      
+    if (qhwebConfig) {
+      $scope.title = qhwebConfig.siteName;
+      $scope.subtitle = qhwebConfig.siteSubtitle;
+      Util.Title(qhwebConfig.siteName);
     }
     
-    if ($scope.archive.length) {
-      obj.archive = $scope.archive;
+    function GetInfo () {    
+      $http.post("/info")
+        .success(function (result) {
+          $scope.articles = result.articles;
+          $scope.categories = result.categories;
+          $scope.archives = result.archives;
+          
+          qhwebConfig = result.config;
+          $scope.title = qhwebConfig.siteName;
+          $scope.subtitle = qhwebConfig.siteSubtitle;
+          Util.Title(qhwebConfig.siteName);
+        });
     }
     
-    if ($scope.search.length) {
-      obj.search = $scope.search;
-    }
-    
-    if ($rootScope.qhwebKey.length) {
-      obj.key = $rootScope.qhwebKey;
-    }
-    
-    $http.post("/page", obj)
-      .success(function (result) {
+    function GetPosts () {
+      if ($routeParams.page && parseInt($routeParams.page)) {
+        $scope.page = parseInt($routeParams.page);
+      } else {
+        $scope.page = 1;
+      }
+      
+      if ($routeParams.category) {
+        $scope.category = $routeParams.category;
+      } else {
+        $scope.category = "";
+      }
+      
+      if ($routeParams.archive) {
+        $scope.archive = $routeParams.archive;
+      } else {
+        $scope.archive = "";
+      }
+      
+      if ($routeParams.search) {
+        $scope.search = $routeParams.search;
+      } else {
+        $scope.search = "";
+      }
+      
+      var obj = {
+        page: $scope.page
+      };
+      
+      if ($scope.category.length) obj.category = $scope.category;
+      
+      if ($scope.archive.length) obj.archive = $scope.archive;
+      
+      if ($scope.search.length) obj.search = $scope.search;
+      
+      if (Util.HasKey()) obj.key = Util.Key();
+      
+      Blog.list(obj, function (result) {
+        if (result.count) {
+          $scope.message = "";
+        } else {
+          $scope.message = "No post found";
+        }
+        
         $scope.maxPage = Math.max(Math.ceil(result.count / result.itemOfPage), 1);
         
         if ($scope.page > $scope.maxPage || $scope.page < 1) {
-          $rootScope.goBack();
+          Util.GoBack();
         } else {
           $scope.posts = result.posts;
           $scope.mainButton = {display: ""};
@@ -153,129 +145,131 @@ qhwebControllers.controller("mainController", function ($rootScope, $scope, $rou
           }
         }
       });
-  }
-  
-  $scope.GetPosts = GetPosts;
-  
-  GetInfo();
-  GetPosts();
-  
-});
+    }
+    
+    $scope.GetPosts = GetPosts;
+    
+    GetInfo();
+    GetPosts();
+  }]);
 
 
 
-qhwebControllers.controller("newController", function ($rootScope, $scope, $location, $http, $location) {
-  $rootScope.title = "New Post";
-  $scope.title = "";
-  $scope.key = "";
-  $scope.isarticle = false;
-  $scope.isprivate = false;
-  $scope.categories = [];
-  $scope.category = "";
-  
-  if ($rootScope.qhwebKey.length) {
-    $scope.key = $rootScope.qhwebKey;
-  }
-  
-  (function InsertDate () {
-    var now = new Date();
-    now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
-    $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
-  })(); // autorun
-  
-  $http.post("/info")
-    .success(function (result) {
-      $scope.categories = result.categories;
-    });
-  
-  $scope.ChangeCategory = function (c) {
-    $scope.category = c;
-  };
-  
-  $scope.Submit = function () {
-    if ($("textarea[name='content']").length == 0) return;
-    var content = $("textarea[name='content']").val().trim();
-        
-    var title = $scope.title.trim();
-    var date = $scope.date.trim();
-    var key = $scope.key.trim();
+  qhwebControllers.controller("newController", [
+    "$scope", "$http", "Blog", "Util",
+    function ($scope, $http, Blog, Util) {
+    Util.Title("New Post");
+    $scope.title = "";
+    $scope.key = "";
+    $scope.isarticle = false;
+    $scope.isprivate = false;
+    $scope.categories = [];
+    $scope.category = "";
     
-    var type = $scope.isarticle ? "article" : "post";
-    var accessible = $scope.isprivate ? "private" : "public";
-    var category = $scope.category.trim();
-    
-    if (title == "") {
-      alertify.alert("title can't be empty!");
-      return;
-    }
-    if (date == "") {
-      alertify.alert("date can't be empty!");
-      return;
-    }
-    if (key == "") {
-      alertify.alert("key can't be empty!");
-      return;
-    }
-    if (content == "") {
-      alertify.alert("content can't be empty!");
-      return;
-    }
-    var data = {};
-    data.title = title;
-    data.date = date;
-    data.key = key;
-    data.content = content;
-    data.type = type;
-    
-    if (data.type == "post") {
-      data.category = category;
-      data.accessible = accessible;
+    if (Util.HasKey()) {
+      $scope.key = Util.Key();
     }
     
-    $http.post("/new", data)
+    (function InsertDate () {
+      var now = new Date();
+      now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
+      $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
+    })(); // autorun
+    
+    $http.post("/info")
       .success(function (result) {
+        $scope.categories = result.categories;
+      });
+    
+    $scope.ChangeCategory = function (c) {
+      $scope.category = c;
+    };
+    
+    $scope.Submit = function () {
+      if ($("textarea[name='content']").length == 0) return;
+      var content = $("textarea[name='content']").val().trim();
+          
+      var title = $scope.title.trim();
+      var date = $scope.date.trim();
+      var key = $scope.key.trim();
+      
+      var type = $scope.isarticle ? "article" : "post";
+      var accessible = $scope.isprivate ? "private" : "public";
+      var category = $scope.category.trim();
+      
+      if (title == "") {
+        alertify.alert("title can't be empty!");
+        return;
+      }
+      if (date == "") {
+        alertify.alert("date can't be empty!");
+        return;
+      }
+      if (key == "") {
+        alertify.alert("key can't be empty!");
+        return;
+      }
+      if (content == "") {
+        alertify.alert("content can't be empty!");
+        return;
+      }
+      var data = {};
+      data.title = title;
+      data.date = date;
+      data.key = key;
+      data.content = content;
+      data.type = type;
+      
+      if (data.type == "post") {
+        data.category = category;
+        data.accessible = accessible;
+      }
+      
+      Blog.create(data, function (result) {
         if (result.message) {
           alertify.alert(result.message, function () {
-            $rootScope.goBack();
+            Util.GoBack();
           });
         } else if (result.success) {
           alertify.alert("Post create successful", function () {
-            $rootScope.goBack();
+            Util.GoBack();
           });
         } else {
           alertify.alert("unknown error");
         }
       });
-  };
-  
-  setTimeout(window.LoadEditor, 100);
-});
-
-
-
-qhwebControllers.controller("showController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
-  var id = $routeParams.id;
-  $scope.content = "";
+    };
     
-  if (typeof id != "string" || id.trim().length <= 0) {
-    alertify.alert("Invalid arguments");
-    $rootScope.goBack();
-    return;
-  }
-  
-  id = id.trim();
-  
-  $http.post("/content", {id: id})
-    .success(function (result) {
+    setTimeout(window.LoadEditor, 100);
+  }]);
+
+
+
+  qhwebControllers.controller("showController", [
+    "$scope", "$routeParams", "Blog", "Util",
+    function ($scope, $routeParams, Blog, Util) {
+    var id = $routeParams.id;
+    $scope.content = "";
+    $scope.message = "Loading...";
+      
+    if (typeof id != "string" || id.trim().length <= 0) {
+      return alertify.alert("Invalid arguments", Util.GoBack);
+    }
+    
+    id = id.trim();
+    
+    Blog.fetch({id: id}, function (result) {
       if (result.message) {
+        $scope.message = result.message;
         alertify.alert(result.message, function () {
-          $rootScope.goBack();
+          Util.GoBack();
         });
       } else {
-        $rootScope.title = result.title;
+        Util.Title(result.title);
         $scope.id = id;
         $scope.title = result.title;
         $scope.type = result.type;
+        $scope.message = "";
         
         var ta = document.createElement("textarea");
         ta.value = result.content;
@@ -305,67 +299,65 @@ qhwebControllers.controller("showController", function ($rootScope, $scope, $loc
                 id: id,
                 key: value
               };
-              $http.post("/del", data)
-                .success(function (result) {
-                  if (result.success) {
-                    alertify.alert("already deleted", function () {
-                      $rootScope.goBack();
-                    });
-                  } else {
-                    alertify.alert(result.message);
-                  }
-                });
+              Blog.remove(data, function (result) {
+                if (result.success) {
+                  alertify.alert("already deleted", Util.GoBack);
+                } else {
+                  alertify.alert(result.message || "System Error");
+                }
+              });
             }
           }, {"type" : "password"});
         };
       }
     });
-});
+  }]);
 
 
 
-qhwebControllers.controller("editController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
-  $rootScope.title = "Edit Post";
-  $scope.title = "";
-  $scope.key = "";
-  $scope.isprivate = false;
-  $scope.categories = [];
-  $scope.category = "";
-  $scope.categoryChoice = "";
-  
-  $scope.changeCategory = function (c) {
-    $scope.category = c;
-  };
-  
-  if ($rootScope.qhwebKey.length) {
-    $scope.key = $rootScope.qhwebKey;
-  }
-
-  var id = $routeParams.id;
-  $scope.content = "";
+  qhwebControllers.controller("editController", [
+    "$scope", "$routeParams", "$http", "Blog", "Util",
+    function ($scope, $routeParams, $http, Blog, Util) {
+    Util.Title("Edit Post");
+    $scope.title = "";
+    $scope.key = "";
+    $scope.isprivate = false;
+    $scope.categories = [];
+    $scope.category = "";
+    $scope.categoryChoice = "";
     
-  if (typeof id != "string" || id.trim().length <= 0) {
-    alertify.alert("Invalid arguments");
-    $rootScope.goBack();
-    return;
-  }
-  
-  $scope.ChangeCategory = function (c) {
-    $scope.category = c;
-  };
-  
-  (function GetCategories () {
-    $http.post("/info")
-      .success(function (result) {
-        $scope.categories = result.categories;
+    $scope.changeCategory = function (c) {
+      $scope.category = c;
+    };
+    
+    if (Util.HasKey()) {
+      $scope.key = Util.Key();
+    }
+
+    var id = $routeParams.id;
+    $scope.content = "";
+      
+    if (typeof id != "string" || id.trim().length <= 0) {
+      return alertify.alert("Invalid arguments", function () {
+        Util.GoBack();
       });
-  })();
-  
-  $http.post("/content", {id: id})
-    .success(function (result) {
+    }
+    
+    $scope.ChangeCategory = function (c) {
+      $scope.category = c;
+    };
+    
+    (function GetCategories () {
+      $http.post("/info")
+        .success(function (result) {
+          $scope.categories = result.categories;
+        });
+    })();
+    
+    Blog.fetch({id: id}, function (result) {
       if (result.message) {
         alertify.alert(result.message, function () {
-          $rootScope.goBack();
+          Util.GoBack();
         });
       } else {
         $scope.title = result.title;
@@ -426,116 +418,115 @@ qhwebControllers.controller("editController", function ($rootScope, $scope, $loc
             accessible: accessible
           };
     
-          $http.post("/edit", data)
-            .success(function (result) {
-              if (result.message) {
-                alertify.alert(result.message, function () {
-                  $rootScope.goBack();
-                });
-              } else if (result.success) {
-                alertify.alert("Post edit successful", function () {
-                  $rootScope.goBack();
-                });
-              } else {
-                alertify.alert("unknown error");
-              }
-            });
+          Blog.save(data, function (result) {
+            if (result.success) {
+              alertify.alert("Post edit successful", Util.GoBack);
+            } else {
+              alertify.alert(result.message || "System Error");
+            }
+          });
         }; // Submit()
         
       }
     });
 
-});
+  }]);
 
 
 
-qhwebControllers.controller("configController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
-  $scope.siteName = "";
-  $scope.siteSubtitle = "";
-  $scope.url = "";
-  $scope.itemOfPage = "";
-  $scope.key = "";
-  
-  if ($rootScope.qhwebKey.length) {
-    $scope.key = $rootScope.qhwebKey;
-  }
-  
-  (function GetInfo () {    
-    $http.post("/info")
-      .success(function (result) {
-        var cf = result.config;        
-        $scope.siteName = cf.siteName;
-        $scope.siteSubtitle = cf.siteSubtitle;
-        $scope.url = cf.url;
-        $scope.itemOfPage = cf.itemOfPage;
-        
-        $scope.Submit = function () {
-          if ($scope.key.trim().length <= 0) {
-            alertify.alert("key cannot be empty");
-            return;
-          }
+  qhwebControllers.controller("configController", [
+    "$scope", "$http", "Util",
+    function ($scope, $http, Util) {
+    Util.Title("Config");
+    $scope.siteName = "";
+    $scope.siteSubtitle = "";
+    $scope.url = "";
+    $scope.itemOfPage = "";
+    $scope.key = "";
+    
+    if (Util.HasKey()) {
+      $scope.key = Util.Key();
+    }
+    
+    (function GetInfo () {    
+      $http.post("/info")
+        .success(function (result) {
+          var cf = result.config;        
+          $scope.siteName = cf.siteName;
+          $scope.siteSubtitle = cf.siteSubtitle;
+          $scope.url = cf.url;
+          $scope.itemOfPage = cf.itemOfPage;
           
-          var itemOfPage = parseInt($scope.itemOfPage);
-          if (isNaN(itemOfPage) || itemOfPage <= 0) {
-            alertify.alert("invalid item of page");
-            return;
-          }
-          
-          var obj = {};
-          obj.key = $scope.key;
-          obj.itemOfPage = itemOfPage;
-          obj.siteName = $scope.siteName;
-          obj.siteSubtitle = $scope.siteSubtitle;
-          obj.url = $scope.url;
-          
-          $http.post("/config", obj)
-            .success(function (result) {
-              if (result.ok) {
-                alertify.alert("config update success", function () {
-                  $rootScope.goBack();
-                });
-              } else {
-                alertify.alert(result.message || "System Error");
+          $scope.Submit = function () {
+            if ($scope.key.trim().length <= 0) {
+              return alertify.alert("key cannot be empty");
+            }
+            
+            var itemOfPage = parseInt($scope.itemOfPage);
+            if (isNaN(itemOfPage) || itemOfPage <= 0) {
+              return alertify.alert("invalid item of page");
+            }
+            
+            var obj = {
+              key: $scope.key,
+              itemOfPage: itemOfPage,
+              siteName: $scope.siteName,
+              siteSubtitle: $scope.siteSubtitle,
+              url: $scope.url
+            };
+            
+            $http.post("/config", obj)
+              .success(function (result) {
+                if (result.ok) {
+                  alertify.alert("config update success", Util.GoBack);
+                } else {
+                  alertify.alert(result.message || "System Error", Util.GoBack);
+                }
+              });
+            
+          };
+        });
+    })(); // autorun
+  }]);
+
+
+
+  qhwebControllers.controller("passwordController", [
+    "$scope", "$http", "Util",
+    function ($scope, $http, Util) {
+    Util.Title("Change Password");
+    $scope.okey = "";
+    $scope.nkey = "";
+    $scope.rkey = "";
+    
+    if (Util.HasKey()) {
+      $scope.okey = Util.Key();
+    }
+    
+    $scope.Submit = function () {
+      if ($scope.okey == "") {
+        return alertify.alert("old key is empty!");
+      }
+      
+      if ($scope.nkey != $scope.rkey) {
+        return alertify.alert("new key is different from repeat!");
+      }
+      
+      $http.post("password", {key: $scope.okey, nkey: $scope.nkey})
+        .success(function (result) {
+          if (result.ok) {
+            alertify.alert("success", function () {
+              if (Util.HasKey()) {
+                Util.SetKey($scope.nkey);
               }
+              Util.GoBack();
             });
-          
-        };
-      });
-  })(); // autorun
-});
+          } else {
+            alertify.alert(result.message || "System Error");
+          }
+        });
+    };
 
+  }]);
 
-
-qhwebControllers.controller("passwordController", function ($rootScope, $scope, $location, $routeParams, $http, $location) {
-  $scope.okey = "";
-  $scope.nkey = "";
-  $scope.rkey = "";
-  
-  if ($rootScope.qhwebKey.length) {
-    $scope.okey = $rootScope.qhwebKey;
-  }
-  
-  $scope.Submit = function () {
-    if ($scope.okey == "") {
-      return alertify.alert("old key is empty!");
-    }
-    
-    if ($scope.nkey != $scope.rkey) {
-      return alertify.alert("new key is different from repeat!");
-    }
-    
-    $http.post("password", {key: $scope.okey, nkey: $scope.nkey})
-      .success(function (result) {
-        if (result.ok) {
-          alertify.alert("success", function () {
-            $rootScope.goBack();
-          });
-        } else {
-          alertify.alert(result.message || "System Error");
-        }
-      });
-  };
-
-});
-
-
+})();
