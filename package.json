@@ -13,13 +13,12 @@
     "express": "latest",
     "body-parser": "latest",
     "connect-multiparty": "latest",
-    "compression": "latest",
-    "node-uuid": "latest"
+    "compression": "latest"
   },
   "engines": {
     "node": ">=0.8.0"
   },
-  "main": "qw.js",
+  "main": "blog.js",
    "repository": {
     "type": "git",
     "url": "https://github.com/qhduan/qhweb.git"

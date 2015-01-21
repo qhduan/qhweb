@@ -15,9 +15,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(compression());
 
-app.get("/", function (req, res) {
-  res.sendFile(__dirname + "/public/index.html");
-});
+//app.get("/", function (req, res) {
+//  res.sendFile(__dirname + "/public/index.html");
+//});
 
 app.post("/info", post.GetInfoHandle);
 
@@ -34,6 +34,11 @@ app.post('/upload', multipart(), tool.UploadHandle);
 
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/database"));
+
+app.get("*", function (req, res) {
+  // 这部分要在所有的其他项目之下，最后处理
+  res.sendFile(__dirname + "/public/index.html");
+});
 
 var PORT = config.get("port");
 app.listen(PORT, function () {

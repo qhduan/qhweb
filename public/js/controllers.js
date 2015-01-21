@@ -24,15 +24,15 @@
     
     $scope.Search = function (s) {
       if (s.trim().length) {
-        Util.Go("#/main?search=" + encodeURIComponent(s));
+        Util.Go("/main?search=" + encodeURIComponent(s));
       } else {
-        Util.Go("#/main");
+        Util.Go("/main");
       }
     };
     
     $scope.GoArchive = function (choice) {
       if (choice != "Archive" && choice != "") {
-        Util.Go("#/main?archive=" + choice);
+        Util.Go("/main?archive=" + choice);
       }
     };
     
@@ -226,16 +226,12 @@
       }
       
       Blog.create(data, function (result) {
-        if (result.message) {
-          alertify.alert(result.message, function () {
-            Util.GoBack();
-          });
-        } else if (result.success) {
+        if (result.success) {
           alertify.alert("Post create successful", function () {
             Util.GoBack();
           });
         } else {
-          alertify.alert("unknown error");
+          alertify.error(result.message || "System Error");
         }
       });
     };
@@ -306,7 +302,7 @@
                 if (result.success) {
                   alertify.alert("already deleted", Util.GoBack);
                 } else {
-                  alertify.alert(result.message || "System Error");
+                  alertify.error(result.message || "System Error");
                 }
               });
             }
@@ -425,7 +421,7 @@
             if (result.success) {
               alertify.alert("Post edit successful", Util.GoBack);
             } else {
-              alertify.alert(result.message || "System Error");
+              alertify.error(result.message || "System Error");
             }
           });
         }; // Submit()
@@ -481,9 +477,9 @@
             $http.post("/config", obj)
               .success(function (result) {
                 if (result.ok) {
-                  alertify.alert("config update success", Util.GoBack);
+                  alertify.success("config update success");
                 } else {
-                  alertify.alert(result.message || "System Error", Util.GoBack);
+                  alertify.error(result.message || "System Error");
                 }
               });
             
@@ -525,7 +521,7 @@
               Util.GoBack();
             });
           } else {
-            alertify.alert(result.message || "System Error");
+            alertify.error(result.message || "System Error");
           }
         });
     };

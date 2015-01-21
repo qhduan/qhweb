@@ -15,7 +15,7 @@ function ExistsOrCreate (dir) {
 ExistsOrCreate(DATABASE); // 判断根目录下的database目录是否存在，不存在则创建
 ExistsOrCreate(DATABASE + "posts"); // 帖子目录
 ExistsOrCreate(DATABASE + "articles"); // 文章目录
-ExistsOrCreate(DATABASE + "upload"); // 附件目录
+ExistsOrCreate(DATABASE + "uploads"); // 附件目录
 
 
 // convert a name to a valid filename

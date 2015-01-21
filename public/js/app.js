@@ -3,7 +3,7 @@
 
   var qhweb = angular.module("qhweb", ["ngRoute", "ngResource", "ngAnimate", "qhwebControllers"]);
 
-  qhweb.config(["$routeProvider", function ($routeProvider) {
+  qhweb.config(["$routeProvider", "$locationProvider", function ($routeProvider, $locationProvider) {
     $routeProvider.
       when("/main", {
         templateUrl: "template/main.html",
@@ -32,6 +32,7 @@
       otherwise({
         redirectTo: "/main"
       });
+    $locationProvider.html5Mode(true);
   }]);
 
   qhweb.run(["$rootScope", "$location", "$http", "$document",
@@ -64,14 +65,18 @@
     
     var history = [];
     
+    /*
     $rootScope.$on("$routeChangeSuccess", function () {
       history.push($location.url());
     });
+    */
     
     $rootScope.GoBack = function () {
-      var url = "/main";
-      if (history.length > 1) url = history.splice(-2)[0];
-      window.location.href = "#" + url;
+      //var url = "/main";
+      //if (history.length > 1) url = history.splice(-2)[0];
+      //window.location.href = "#" + url;
+      //$location.path(url);
+      window.history.go(-1);
     };
     
     var qhwebKey = "";
@@ -98,11 +103,11 @@
             .success(function (result) {
               if (result.ok) {
                 qhwebKey = value;
-                alertify.alert("Congratulation, your key is right!", function () {
+                alertify.success("Congratulation, your key is right!", function () {
                   if (typeof callback == "function") callback();
                 });
               } else {
-                alertify.alert(result.message || "System Error");
+                alertify.error(result.message || "System Error");
               }
             });
         }
@@ -115,10 +120,11 @@
     $sceProvider.enabled(false);
   }]);
   
-  qhweb.factory("Util", ["$rootScope", function ($rootScope) {
+  qhweb.factory("Util", ["$rootScope", "$location", function ($rootScope, $location) {
     return {
       Go: function (url) {
-        window.location.href = url;
+        //window.location.href = url;
+        $location.url(url);
       },
       GoBack: function () {
         $rootScope.GoBack();

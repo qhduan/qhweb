@@ -2,7 +2,6 @@
 
 var fs = require("fs");
 var util = require("util");
-var uuid = require("node-uuid")
 
 var config = require("./config")
 var tool = require("./tool");
@@ -270,16 +269,39 @@ function CreatePostHandle (req, res) {
   if (req.body.type && typeof req.body.type == "string" && req.body.type == "article") {
     type = "article";
   }
+  
+  var d = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
+  if (!d) {
+    return res.json({message: "date invalid!"});
+  }  
+  var year = d[1];
+  var month = d[2];
+  var day = d[3];
 
   if (type == "post") {
-    var d = date.match(/^(\d\d\d\d)-(\d\d)-(\d\d)\ (\d\d):(\d\d):(\d\d)$/);
-    if (!d) {
-      return res.json({message: "date invalid!"});
-    }  
-    var year = d[1];
-    var month = d[2];
     
-    var id = uuid.v1();
+    var GetId = function () {          
+      var FixNumber = function (n) {
+        n = parseInt(n);
+        if (isNaN(n) || n < 0) {
+          throw "invalid number";
+        }
+        if (n <= 9) {
+          return "0" + n;
+        }
+        return "" + n;
+      }
+      
+      var ind = 1;
+      var name = year + month + day + FixNumber(ind);
+      while (fs.existsSync(tool.DATABASE + year + "/" + month + "/" + name + ".md")) {
+        ind++;
+        name = year + month + day + FixNumber(ind);
+      }
+      return name;
+    };
+    
+    var id = GetId();
     
     var path = util.format(tool.DATABASE + "posts/%s/%s/%s.md", year, month, id);
      
@@ -301,7 +323,29 @@ function CreatePostHandle (req, res) {
       res.json({success: "ok"});
     });
   } else {
-    var id = uuid.v1();
+    
+    var GetId = function () {          
+      var FixNumber = function (n) {
+        n = parseInt(n);
+        if (isNaN(n) || n < 0) {
+          throw "invalid number";
+        }
+        if (n <= 9) {
+          return "0" + n;
+        }
+        return "" + n;
+      }
+      
+      var ind = 1;
+      var name = year + month + day + FixNumber(ind);
+      while (fs.existsSync(tool.DATABASE + "articles/" + name + ".md")) {
+        ind++;
+        name = year + month + day + FixNumber(ind);
+      }
+      return name;
+    };
+    
+    var id = GetId();
     var path = util.format(tool.DATABASE + "articles/%s.md", id);
     
     fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s",
@@ -452,16 +496,20 @@ function GetPageHandle (req, res) {
   }
   
   if (req.body.search && typeof req.body.search == "string" && req.body.search.length) {
-    var kw = req.body.search; // keywords
-    kw = kw.split(/\s/);
+    var fkw = req.body.search; // keywords
+    var kw = fkw.split(/\s/);
     kw = kw.filter(function (item) {
       if (item.match(/^[a-zA-Z0-9]{1}$/)) return false;
       return true;
     });
     
-    if (kw.length > 0) {    
+    if (kw.length > 0) {
       list = list.filter(function (item) {
         item.searchScore = 0;
+        if (item.title.indexOf(fkw) != -1)
+          item.searchScore += 50;
+        if (item.content.indexOf(fkw) != -1)
+          item.searchScore += 20;
         for (var i = 0; i < kw.length; i++) {
           if (item.title.indexOf(kw[i]) != -1)
             item.searchScore += 10;
