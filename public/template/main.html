@@ -37,9 +37,9 @@
           <div class="panel panel-default">
             <div class="panel-body list-group">
               
-              <select class="form-control" style="margin: 10px 0;">
+              <select class="form-control" style="margin: 10px 0;" ng-model="archiveSelected" ng-change="GoArchive(archiveSelected)">
                 <option>Archive</option>
-                <option ng-repeat="it in archives" ng-selected="it.name == archive" value="{{ it.name }}" ng-click="GoArchive(it.name)">{{ it.name }} - {{ it.value }}</option>
+                <option ng-repeat="it in archives" ng-selected="it.name == archive" value="{{ it.name }}">{{ it.name }} - {{ it.value }}</option>
               </select>
               
               <form class="input-group" ng-submit="Search(search)" style="margin: 10px 0;">
@@ -79,9 +79,9 @@
             </ol>
             
             <div style="margin: 10px 0;">
-              <select class="form-control">
+              <select class="form-control" ng-model="archiveSelected" ng-change="GoArchive(archiveSelected)">
                 <option>Archive</option>
-                <option ng-repeat="it in archives" ng-selected="it.name == archive" value="{{ it.name }}" ng-click="GoArchive(it.name)">{{ it.name }} - {{ it.value }}</option>
+                <option ng-repeat="it in archives" ng-selected="it.name == archive" value="{{ it.name }}" >{{ it.name }} - {{ it.value }}</option>
               </select>
             </div>
             

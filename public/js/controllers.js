@@ -21,6 +21,7 @@
     $scope.posts = [];
     $scope.search = "";
     $scope.message = "Loading...";
+    $scope.archiveSelected = "Archive";
     
     $scope.Search = function (s) {
       if (s.trim().length) {
@@ -32,7 +33,7 @@
     
     $scope.GoArchive = function (choice) {
       if (choice != "Archive" && choice != "") {
-        Util.Go("/main?archive=" + choice);
+        Util.Go("/main?archive=" + encodeURIComponent(choice));
       }
     };
     
