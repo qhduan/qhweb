@@ -49,9 +49,10 @@
       </div>
       
       <div>
-        <div ng-show="prev"><a href="#/show/{{ prev.id }}">前一篇《{{ prev.title }}》</a></div>
         
         <div ng-show="next"><a href="#/show/{{ next.id }}">后一篇《{{ next.title }}》</a></div>
+        
+        <div ng-show="prev"><a href="#/show/{{ prev.id }}">前一篇《{{ prev.title }}》</a></div>
         
         <div>{{ accessible }} {{ type }}</div>
         

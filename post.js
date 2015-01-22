@@ -61,6 +61,12 @@ function LoadMarkdown (dir, type) {
 					  console.log(d,fn);
 					  throw "file date can't be parsed";
           }
+          elem.year = date[1];
+          elem.month = date[2];
+          elem.day = date[3];
+          elem.hours = date[4];
+          elem.minutes = date[5];
+          elem.seconds = date[6];
           elem.archive = date[1] + date[2];
           
           if (type == "post") {          
@@ -93,9 +99,9 @@ function LoadMarkdown (dir, type) {
 			}
 		}
 		result.sort(function (a, b) {
-		  a = new Date(a.date);
-		  b = new Date(b.date);
-		  return b.getTime() - a.getTime();
+      var ta = Date.UTC(a.year, a.month, a.day, a.hours, a.minutes, a.seconds);
+      var tb = Date.UTC(b.year, b.month, b.day, b.hours, b.minutes, b.seconds);
+      return tb - ta;
 		});
     
     return result;
@@ -140,7 +146,7 @@ function Load () {
     if (ind != 0 && item.accessible != "private") {
       for (var i = ind-1; i >= 0; i--) {
         if (arr[i].accessible != "private") {
-          arr[ind].prev = {
+          arr[ind].next = {
             id: arr[i].id,
             title: arr[i].title
           };
@@ -152,7 +158,7 @@ function Load () {
     if (ind != (arr.length - 1) && item.accessible != "private") {
       for (var i = ind+1; i < arr.length; i++) {
         if (arr[i].accessible != "private") {
-          arr[ind].next = {
+          arr[ind].prev = {
             id: arr[i].id,
             title: arr[i].title
           };
@@ -218,14 +224,12 @@ function Load () {
     Cache.Archives.reverse();
   }
   
-  var ret = ["Loaded",
-    ":",
+  var ret = [ "[" + (new Date().toISOString().substring(0, 19).replace("T", " ")) + "]",
+    "Loaded:",
     Cache.Posts.length, "posts,",
     Cache.Articles.length, "articles,",
     Cache.Archives.length, "archives,",
-    Cache.Categories.length, "categories",
-    "---",
-    (new Date().toLocaleString())];
+    Cache.Categories.length, "categories"];
   
   ret = ret.join(" ");
   console.log(ret);
@@ -587,8 +591,19 @@ function GetContentHandle (req, res) {
 }
 
 
+function Bootstrap () {
+  Load();
+  fs.watch(tool.DATABASE + "posts", function () {
+    Load();
+  });
+  fs.watch(tool.DATABASE + "articles", function () {
+    Load();
+  });
+}
 
-Load();
+Bootstrap();
+
+
 
 exports.GetInfoHandle = GetInfoHandle;
 exports.GetPageHandle = GetPageHandle;

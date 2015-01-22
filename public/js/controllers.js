@@ -32,8 +32,10 @@
     };
     
     $scope.GoArchive = function (choice) {
-      if (choice != "Archive" && choice != "") {
-        Util.Go("/main?archive=" + encodeURIComponent(choice));
+      if (choice.length) {
+        if (choice != "Archive") {
+          Util.Go("/main?archive=" + encodeURIComponent(choice));
+        }
       }
     };
     
