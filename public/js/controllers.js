@@ -74,6 +74,7 @@
     if (qhwebConfig) {
       $scope.title = qhwebConfig.siteName;
       $scope.subtitle = qhwebConfig.siteSubtitle;
+      $scope.url = qhwebConfig.url;
       Util.Title(qhwebConfig.siteName);
     }
     
@@ -87,6 +88,7 @@
           qhwebConfig = result.config;
           $scope.title = qhwebConfig.siteName;
           $scope.subtitle = qhwebConfig.siteSubtitle;
+          $scope.url = qhwebConfig.url;
           Util.Title(qhwebConfig.siteName);
         });
     }
@@ -136,6 +138,7 @@
         }
         
         $scope.maxPage = Math.max(Math.ceil(result.count / result.itemOfPage), 1);
+        $scope.info = "" + result.count + " posts";
         
         if ($scope.page > $scope.maxPage || $scope.page < 1) {
           Util.GoBack();
@@ -164,10 +167,10 @@
     Util.Title("New Post");
     $scope.title = "";
     $scope.key = "";
-    $scope.isarticle = false;
-    $scope.isprivate = false;
     $scope.categories = [];
     $scope.category = "";
+    $scope.choiceType = "post";
+    $scope.choiceAccessible = "public";
     
     if (Util.HasKey()) {
       $scope.key = Util.Key();
@@ -196,8 +199,8 @@
       var date = $scope.date.trim();
       var key = $scope.key.trim();
       
-      var type = $scope.isarticle ? "article" : "post";
-      var accessible = $scope.isprivate ? "private" : "public";
+      var type = $scope.choiceType;
+      var accessible = $scope.choiceAccessible;
       var category = $scope.category.trim();
       
       if (title == "") {
@@ -294,22 +297,26 @@
           window.LoadEditor();
         }, 200);
         
-        $scope.del = function () {
-          alertify.prompt("Please input your key:", function (evt, value) {
-            if (evt) {
-              var data = {
-                id: id,
-                key: value
-              };
-              Blog.remove(data, function (result) {
-                if (result.success) {
-                  alertify.alert("already deleted", Util.GoBack);
-                } else {
-                  alertify.error(result.message || "System Error");
-                }
-              });
-            }
-          }, {"type" : "password"});
+        $scope.Delete = function () {
+          if (!Util.HasKey()) {
+            alertify.error("your're not sign in");
+          } else {
+            alertify.confirm("Are you sure? We will throw it to Mars and you'll never have it again!", function (evt) {
+              if (evt) {
+                var data = {
+                  id: id,
+                  key: Util.Key()
+                };
+                Blog.remove(data, function (result) {
+                  if (result.success) {
+                    alertify.alert("already deleted", Util.GoBack);
+                  } else {
+                    alertify.error(result.message || "System Error");
+                  }
+                });
+              }
+            });
+          }
         };
       }
     });
@@ -323,10 +330,10 @@
     Util.Title("Edit Post");
     $scope.title = "";
     $scope.key = "";
-    $scope.isprivate = false;
     $scope.categories = [];
     $scope.category = "";
     $scope.categoryChoice = "";
+    $scope.choiceAccessible = "public";
     
     $scope.changeCategory = function (c) {
       $scope.category = c;
@@ -337,6 +344,7 @@
     }
 
     var id = $routeParams.id;
+    $scope.id = id;
     $scope.content = "";
       
     if (typeof id != "string" || id.trim().length <= 0) {
@@ -366,8 +374,10 @@
         
         $scope.type = result.type || "post";
         
+        $scope.createDate = result.date;
+        
         if (result.accessible && result.accessible == "private") {
-          $scope.isprivate = true;
+          $scope.choiceAccessible = "private";
         }
         
         if (result.category && result.category.length) {

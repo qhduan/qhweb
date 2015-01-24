@@ -1,12 +1,25 @@
-<div class="container" style="margin: 0px auto;">
+<div class="container" style="margin: 20px auto;">
   <div class="row">
     <div class="container-fluid">
-      <h1>
-        <a href="#/main">
-          {{ title }}
-        </a>
-        <small class="pull-right" style="padding-top: 25px;">{{ subtitle }}</small>
-      </h1>
+      
+      <div>
+        <div class="dropdown">
+          <a class="dropdown-toggle h1" href="{{ url }}" onclick="event.preventDefault()" type="button" id="dropdownManage2" data-toggle="dropdown" aria-expanded="true">
+            {{ title }}
+            <small class="pull-right" style="padding-top: 25px;">{{ subtitle }}</small>
+          </a>
+          <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage2">
+            <li role="presentation"><a role="menuitem" tabindex="-1" href="#/main">Home</a></li>
+            <li role="presentation" ng-if="!HasKey()"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="Verify()">Login</a></li>
+            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
+            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#/config">Config</a></li>
+            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#/password">Passwd</a></li>
+            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="LoginOut()">Sign out</a></li>
+          </ul>
+        </div><!-- dropdown -->
+      </div>
+      
+      
       <hr>
     </div>
   </div>
@@ -124,25 +137,6 @@
           
           <nav ng-show="posts && posts.length"><!-- pagination -->
             <ul class="pagination" style="width: 100%;">
-    
-          <div class="pull-right" style="padding-bottom: 10px;"><!-- manage button -->
-            <div ng-if="!HasKey()">
-              <button class="btn btn-default" ng-click="Verify(GetPosts)">Verify</button>
-            </div>
-            <div ng-if="HasKey()">
-              <div class="dropdown">
-                <button class="btn btn-default dropdown-toggle" type="button" id="dropdownManage2" data-toggle="dropdown" aria-expanded="true">
-                  Manage
-                  <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage2">
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/config">Config</a></li>
-                  <li role="presentation"><a role="menuitem" tabindex="-1" href="#/password">Passwd</a></li>
-                </ul>
-              </div>
-            </div>
-          </div><!-- /manage button -->
               
               <li ng-if="page != 1"><!-- 不是第一页，显示正常第一页按钮 -->
                 <a href="#/main{{ param(1) }}" title="Firt p1">
@@ -204,6 +198,7 @@
                   <span class="glyphicon glyphicon-step-forward"></span>
                 </a>
               </li>
+              
             </ul>
           </nav><!-- /pagination -->
           

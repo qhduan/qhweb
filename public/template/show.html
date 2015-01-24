@@ -1,15 +1,28 @@
-<div class="container" style="margin: 0px auto;">
+<div class="container" style="margin: 20px auto;">
   <div class="row">
     <div class="container-fluid">
-      <h1>
-        <a href="#/main">
-          Home
-        </a>
-        /
-        <a href="#/show/{{ id }}">
-          {{ title }}
-        </a>
-      </h1>
+      
+      <div>
+        <div class="dropdown">
+          <a href="#/main" class="h1">
+            Home
+          </a>
+          <span class="h1">&nbsp;/&nbsp;</span>
+          <a href="#" onclick="event.preventDefault()" class="dropdown-toggle h1" type="button" id="dropdownManage1" data-toggle="dropdown" aria-expanded="true">
+              {{ title }}
+          </a>
+          <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage1" style="margin-left: 135px;">
+            <li ng-if="!HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="Verify()">Login</a></li>
+            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#/edit/{{ id }}">Edit</a></li>
+            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
+            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="Delete()">Delete</a></li>
+            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="LoginOut()">Sign Out</a></li>
+          </ul>
+        </div>
+      </div>
+      
+    </div>
+    <div class="container-fluid">
       <hr>
     </div>
   </div>
@@ -28,25 +41,6 @@
   <div class="row">
     <div class="container-fluid">
       <hr>
-      
-      <div class="pull-right">
-        
-        <div ng-if="!HasKey()">
-          <button class="btn btn-default btn-small" ng-click="Verify()">Verify</button>
-        </div>
-        <div ng-if="HasKey()">
-          <div class="dropdown">
-            <button class="btn btn-default dropdown-toggle" type="button" id="dropdownManage1" data-toggle="dropdown" aria-expanded="true">
-              Manage
-              <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage1">
-              <li role="presentation"><a role="menuitem" tabindex="-1" href="#/edit/{{ id }}">Edit</a></li>
-              <li role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="del()">Delete</a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
       
       <div>
         

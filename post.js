@@ -34,7 +34,7 @@ function LoadMarkdown (dir, type) {
           var pos = data.indexOf(s);
           
 					if (pos == -1) {
-					  console.log(f);
+					  console.log(fp);
 					  throw "file have not splitor";
 					}
           
@@ -281,44 +281,92 @@ function CreatePostHandle (req, res) {
   var year = d[1];
   var month = d[2];
   var day = d[3];
+  
+  var ExistsOrCreate = function (path) {
+    if (!fs.existsSync(path)) {
+      fs.mkdirSync(path);
+    }
+  };
+  
+  var GetId = function (year, month, day) {
+    var FixNumber = function (n) {
+      n = parseInt(n);
+      if (isNaN(n) || n < 0) {
+        throw "invalid number";
+      }
+      if (n <= 9) {
+        return "0" + n;
+      }
+      return "" + n;
+    }
+    
+    var ind = 1;
+    var name = year + month + day + FixNumber(ind);
+    
+    var post_dir = tool.DATABASE + "posts/" + year + "/" + month + "/";
+    var article_dir = tool.DATABASE + "articles/";
+    
+    while (true) {
+      var has = false;
+      if (fs.existsSync(post_dir + name + ".md")
+        || fs.existsSync(article_dir + name + ".md")
+        || Cache.Index.hasOwnProperty(name)) {
+        has = true;
+      }
+      
+      if (has) {
+        ind++;
+        name = year + month + day + FixNumber(ind);
+      } else {
+        break;
+      }
+    }
+    return name;
+  };
 
   if (type == "post") {
     
-    var GetId = function () {          
-      var FixNumber = function (n) {
-        n = parseInt(n);
-        if (isNaN(n) || n < 0) {
-          throw "invalid number";
-        }
-        if (n <= 9) {
-          return "0" + n;
-        }
-        return "" + n;
-      }
-      
-      var ind = 1;
-      var name = year + month + day + FixNumber(ind);
-      while (fs.existsSync(tool.DATABASE + year + "/" + month + "/" + name + ".md")) {
-        ind++;
-        name = year + month + day + FixNumber(ind);
-      }
-      return name;
-    };
+    var id = GetId(year, month, day);
     
-    var id = GetId();
+    ExistsOrCreate(tool.DATABASE);
+    ExistsOrCreate(tool.DATABASE + "posts/" + year);
+    ExistsOrCreate(tool.DATABASE + "posts/" + year + "/" + month);
     
     var path = util.format(tool.DATABASE + "posts/%s/%s/%s.md", year, month, id);
-     
-    if (!fs.existsSync(util.format(tool.DATABASE + "posts/%s", year))) {
-      fs.mkdirSync(util.format(tool.DATABASE + "posts/%s", year));
-    }
     
-    if (!fs.existsSync(util.format(tool.DATABASE + "posts/%s/%s", year, month))) {
-      fs.mkdirSync(util.format(tool.DATABASE + "posts/%s/%s", year, month));
-    }
+    var data = util.format(
+      "title: %s\n" +
+      "date: %s\n" +
+      "category: %s\n" +
+      "accessible: %s\n" +
+      "---\n\n" +
+      "%s",
+      title, date, category, accessible, content);
     
-    fs.writeFile(path, util.format("title: %s\ndate: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
-      title, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
+    fs.writeFile(path, data, {encoding: "utf-8"}, function (err) {
+      if(err) {
+        console.log(err);
+        return res.json({message: err});
+      }
+      Load();
+      res.json({success: "ok"});
+    });
+  } else if (type == "article") { // article
+    
+    var id = GetId(year, month, day);
+    
+    ExistsOrCreate(tool.DATABASE);
+    ExistsOrCreate(tool.DATABASE + "articles");
+    
+    var path = util.format(tool.DATABASE + "articles/%s.md", id);
+    var data = util.format(
+      "title: %s\n" +
+      "date: %s\n" +
+      "---\n\n" +
+      "%s",
+      title, date, content);
+    
+    fs.writeFile(path, data, {encoding: "utf-8"}, function (err) {
       if(err) {
         console.log(err);
         return res.json({message: err});
@@ -327,40 +375,7 @@ function CreatePostHandle (req, res) {
       res.json({success: "ok"});
     });
   } else {
-    
-    var GetId = function () {          
-      var FixNumber = function (n) {
-        n = parseInt(n);
-        if (isNaN(n) || n < 0) {
-          throw "invalid number";
-        }
-        if (n <= 9) {
-          return "0" + n;
-        }
-        return "" + n;
-      }
-      
-      var ind = 1;
-      var name = year + month + day + FixNumber(ind);
-      while (fs.existsSync(tool.DATABASE + "articles/" + name + ".md")) {
-        ind++;
-        name = year + month + day + FixNumber(ind);
-      }
-      return name;
-    };
-    
-    var id = GetId();
-    var path = util.format(tool.DATABASE + "articles/%s.md", id);
-    
-    fs.writeFile(path, util.format("title: %s\ndate: %s\n---\n\n%s",
-      title, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
-      if(err) {
-        console.log(err);
-        return res.json({message: err});
-      }
-      Load();
-      res.json({success: "ok"});
-    });
+    return res.json({message: "unknown type"});
   }
 }
 
@@ -411,8 +426,16 @@ function EditPostHandle (req, res, callback) {
   var path = tool.DATABASE + old.dir + "/" + id + ".md";
   
   if (old.type == "post") {
-    fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\ncategory: %s\naccessible: %s\n---\n\n%s",
-      title, old.date, date, category, accessible, content), {encoding: "utf-8"}, function (err) {
+    var data = util.format(
+      "title: %s\n" +
+      "date: %s\n" +
+      "edit: %s\n" +
+      "category: %s\n" +
+      "accessible: %s\n" +
+      "---\n\n" +
+      "%s",
+      title, old.date, date, category, accessible, content);
+    fs.writeFile(path, data, {encoding: "utf-8"}, function (err) {
       if(err) {
         console.log(err);
         return res.json({message: err});
@@ -421,7 +444,12 @@ function EditPostHandle (req, res, callback) {
       res.json({success: "ok"});
     });
   } else if (old.type == "article") {
-    fs.writeFile(path, util.format("title: %s\ndate: %s\nedit: %s\n---\n\n%s",
+    fs.writeFile(path, util.format(
+      "title: %s\n" +
+      "date: %s\n" +
+      "edit: %s\n" +
+      "---\n\n" +
+      "%s",
       title, old.date, date, content), {encoding: "utf-8"}, function (err) {
       if(err) {
         console.log(err);
@@ -430,6 +458,8 @@ function EditPostHandle (req, res, callback) {
       Load();
       res.json({success: "ok"});
     });
+  } else {
+    return res.json({message: "unknown type"});
   }
   
 }
@@ -591,17 +621,8 @@ function GetContentHandle (req, res) {
 }
 
 
-function Bootstrap () {
-  Load();
-  fs.watch(tool.DATABASE + "posts", function () {
-    Load();
-  });
-  fs.watch(tool.DATABASE + "articles", function () {
-    Load();
-  });
-}
 
-Bootstrap();
+Load();
 
 
 

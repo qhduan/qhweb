@@ -1,7 +1,7 @@
 (function () {
   "use strict";
 
-  var qhweb = angular.module("qhweb", ["ngRoute", "ngResource", "ngAnimate", "qhwebControllers"]);
+  var qhweb = angular.module("qhweb", ["ngRoute", "ngResource", "ngAnimate", "ngCookies", "qhwebControllers"]);
 
   qhweb.config(["$routeProvider", "$locationProvider", function ($routeProvider, $locationProvider) {
     $routeProvider.
@@ -35,8 +35,8 @@
     $locationProvider.html5Mode(true);
   }]);
 
-  qhweb.run(["$rootScope", "$location", "$http", "$document",
-    function ($rootScope, $location, $http, $document) {
+  qhweb.run(["$rootScope", "$location", "$http", "$document", "$cookieStore",
+    function ($rootScope, $location, $http, $document, $cookieStore) {
       
     var keys = "";
     $document.on("keypress", function (event) {
@@ -65,44 +65,40 @@
     
     var history = [];
     
-    /*
-    $rootScope.$on("$routeChangeSuccess", function () {
-      history.push($location.url());
-    });
-    */
-    
     $rootScope.GoBack = function () {
-      //var url = "/main";
-      //if (history.length > 1) url = history.splice(-2)[0];
-      //window.location.href = "#" + url;
-      //$location.path(url);
       window.history.go(-1);
     };
     
-    var qhwebKey = "";
-    
-    $rootScope.HasKey = function () {
-      if (qhwebKey.length) {
+    function HasKey () {
+      var key = $cookieStore.get("key");
+      if (typeof key == "string" && key.length) {
         return true;
       }
       return false;
-    };
+    }
     
-    $rootScope.Key = function () {
-      return qhwebKey;
-    };
+    function Key () {
+      var key = $cookieStore.get("key");
+      if (typeof key == "string" && key.length) {
+        return key;
+      }
+    }
     
-    $rootScope.SetKey = function (key) {
-      qhwebKey = key;
-    };
+    function SetKey (key) {
+      $cookieStore.put("key", key);
+    }
     
-    $rootScope.Verify = function (callback) {
+    function ClearKey () {
+      $cookieStore.remove("key");
+    }
+    
+    function Verify (callback) {
       alertify.prompt("Please input your key:", function (evt, value) {
         if (evt && value.trim().length) {
           $http.post("/verify", {key: value})
             .success(function (result) {
               if (result.ok) {
-                qhwebKey = value;
+                SetKey(value);
                 alertify.success("Congratulation, your key is right!", function () {
                   if (typeof callback == "function") callback();
                 });
@@ -112,7 +108,17 @@
             });
         }
       });
-    };
+    }
+    
+    function LoginOut () {
+      ClearKey();
+    }
+    
+    $rootScope.HasKey = HasKey;
+    $rootScope.Key = Key;
+    $rootScope.SetKey = SetKey;
+    $rootScope.Verify = Verify;
+    $rootScope.LoginOut = LoginOut;
     
   }]);
 
