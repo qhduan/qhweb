@@ -117,16 +117,16 @@
                 class="list-group-item"
                 href="#/show/{{ post.id }}"
               >
+                <span ng-if="post.category && post.category.length">
+                  [{{ post.category }}]
+                </span>
+                <span ng-if="post.accessible == 'private'">
+                  *
+                </span>
                 {{ post.title }}
                 <small class="hidden-xs pull-right">
-                  <span ng-if="post.accessible == 'private'">
-                    &lt;private&gt;
-                  </span>
-                  <span ng-if="post.category && post.category.length">
-                    &lt;{{ post.category }}&gt;
-                  </span>
                   <span>
-                    &lt;{{ post.date }}&gt;
+                    {{ post.date }}
                   </span>
                 </small>
               </a><!-- /a -->

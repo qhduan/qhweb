@@ -406,7 +406,7 @@
           var key = $scope.key.trim();
           var category = $scope.category.trim();
           
-          var accessible = $scope.isprivate ? "private" : "public";
+          var accessible = $scope.choiceAccessible;
           
           if (title == "") {
             return alertify.alert("title can't be empty!");
