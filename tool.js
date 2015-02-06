@@ -161,60 +161,6 @@ function VerifyPasswordHandle (req, res) {
 }
 
 
-function LoadJS () {
-  var path = [
-    "/public/js/jquery-1.11.1.min.js",
-    "/public/js/angular/angular.min.js",
-    "/public/js/angular/angular-animate.min.js",
-    "/public/js/angular/angular-cookies.min.js",
-    "/public/js/angular/angular-resource.min.js",
-    "/public/js/angular/angular-route.min.js",
-    "/public/js/"
-  ];
-  
-  var js = "";
-  
-  function ReadFile (p) {
-    var con = fs.readFileSync(__dirname + p, {encoding: "utf-8"});
-    if (js.indexOf(con) == -1) {
-      js += "\n\n\n" + con;
-    }
-  }
-  
-  function ReadDir (p) {
-    var l = fs.readdirSync(__dirname + p);
-    l.forEach(function (elem) {
-      if (elem.match(/\.js/) && fs.statSync(__dirname + p + "/" + elem).isFile()) {
-        ReadFile(p + "/" + elem);
-      } else if (fs.statSync(__dirname + p + "/" + elem).isDirectory()) {
-        ReadDir(p + "/" + elem);
-      }
-    });
-  }
-  
-  path.forEach(function (elem) {
-    if (fs.existsSync(__dirname + elem)) {
-      if (fs.statSync(__dirname + elem).isFile()) {
-        ReadFile(elem);
-      } else if (fs.statSync(__dirname + elem).isDirectory()) {
-        ReadDir(elem);
-      }
-    }
-  });
-  
-  console.log("js loaded,", js.length);
-  
-  return js;
-}
-
-var all_js = LoadJS();
-
-exports.JS = function (req, res) {
-  res.header("Content-Type", "text/javascript");
-  //writeHead(200, { "Content-Type": "text/javascript" });
-  res.end(all_js);
-};
-
 exports.UploadHandle = UploadHandle;
 exports.ChagnePasswordHandle = ChagnePasswordHandle;
 exports.VerifyPasswordHandle = VerifyPasswordHandle;

@@ -54,21 +54,13 @@
       
       <div class="ui segment">
         
-        <div class="ui floating dropdown labeled search fluid button">
-          <div class="text">
-            Archive
-          </div>
-          <i class="dropdown icon"></i>
-          <div class="menu">
-            <div ng-repeat="it in archives" class="item">
-              <a ng-href="#/archive/{{ it.name }}">
-                {{ it.name }} - {{ it.value }}
-              </a>
-              <div ng-if="$last">
-                <div ng-init="dropdown()"></div>
-              </div>
-            </div>
-          </div>
+        <div >
+          <select class="ui dropdown fluid" ng-model="archiveSelected" ng-change="GoArchive(archiveSelected)">
+            <option value="">Archive</option>
+            <option ng-repeat="it in archives" value="{{ it.name }}">
+              {{ it.name }} - {{ it.value }}
+            </option>
+          </select>
         </div>
         
         <div class="ui horizontal divider"></div>
@@ -133,3 +125,7 @@
 
 
 </div>
+
+<script>
+  $(".ui.dropdown").dropdown();
+</script>

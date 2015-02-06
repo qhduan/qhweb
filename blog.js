@@ -32,8 +32,6 @@ app.post("/verify", tool.VerifyPasswordHandle);
 app.post("/password", tool.ChagnePasswordHandle);
 app.post('/upload', multipart(), tool.UploadHandle);
 
-app.get('/js', tool.JS);
-
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/database"));
 
