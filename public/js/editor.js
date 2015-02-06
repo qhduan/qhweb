@@ -3,37 +3,45 @@
   
   // Editor的设置
   // Editor的载入是<div id="editor"></div>
-  // 其中可以设置一些属性例如 <div id="editor" data-submitname="gogogo"></div> 就是把editor在form中textarea的name修改为gogogo
+  // 其中可以设置一些属性例如 <div id="editor" data-submit="gogogo"></div> 就是把editor在form中textarea的name修改为gogogo（为了方便form或者查找）
   // 其中可以设置一些属性例如 <div id="editor" data-cache="false"></div> 就是editor不去写入localstorage缓存
+  
+  // 帖子的设置是把class加一个.editor-content
+  // 例如<div class="editor-content"><textarea>需要转换的内容</textarea></div>
+  
+  // 如果编辑器对象中有textarea，则把其中内容当作默认值
+  // 例如<div id="editor"><textarea>abc123</textarea></div>则"abc123"为默认值
+  
   var Config = {
+    editor: 0, // 指示页面是否有editor，有则自动设置为1
+    content: 0, // 指示页面是否有需要转换的editor-content，有则自动设置为数量
     init: false,
-    contentSel: ".topic-content", // 默认帖子刷新需要的selector
-                                  // 格式例如<div class="topic-content"><textarea>需要转换的内容</textarea></div>
-    submitName: "content", // 用来控制textarea的名字，需要表单提交时使用，默认为content
+    submit: "content", // 用来控制textarea的名字，需要表单提交时使用，默认为content
     saveLocalStorage: true,
     value: null, // 如果<div id="editor"><textarea>ABC</textarea></div> 那么ABC会写入这里
     converter: null, // 如果markdown converter初始化后，这里是一个对象，可以Config.converter.makeHtml(text)
     lastCache: null // 保存一下刚刚载入时localStorage的副本，避免被saveLocalStorage覆盖
   };
 
+
+
   // Need函数是用来导入其他css和js的，作用类似于head.js或者require.js
   // list是一个array数组或者string文件名，保存css或者js
   // callback是一个在所有文件加载后的回调函数，可以为空
-  var NeedLoaded = {};
+  
+  var NeedLoaded = {}; // 已经加载了的文件列表
+  var NeedLoading = {}; // 正在加载了的文件列表
   function Need (list, callback) {
     if (typeof list == "string") list = [list];
     if (typeof list != "object" || !list.length) return;
     
     function LoadCss (url, callback) { // 读取css
-      if (callback)
-        callback(url);
       var link = document.createElement("link");
       link.type = "text/css";
       link.rel = "stylesheet";
       link.href = url;
-      //if (callback)
-      //  link.onload = function () { callback(url); };
-      link.onerror = function () { console.log("load css", url, "failed"); };
+      link.onerror = function () { console.log("load css failed:", url); };
+      (typeof callback == "function") && (link.onload = function () { callback(url); });
       document.getElementsByTagName("head")[0].appendChild(link);
     }
     
@@ -41,9 +49,8 @@
       var js = document.createElement("script");
       js.type = "text/javascript";
       js.src = url;
-      if (callback)
-        js.onload = function () { callback(url); };
-      js.onerror = function () { console.log("load js", url, "failed"); };
+      js.onerror = function () { console.log("load js failed:", url); };
+      (typeof callback == "function") && (js.onload = function () { callback(url); });
       document.getElementsByTagName("body")[0].appendChild(js);
     }
     
@@ -55,36 +62,51 @@
     
     function Complete (url) { // 完成函数，当一个文件loadedd时候执行
       count ++;
-      if (!NeedLoaded[url]) {
+      if (!NeedLoaded.hasOwnProperty(url)) {
         NeedLoaded[url] = 1;
       }
+      if (NeedLoading.hasOwnProperty(url)) {
+        NeedLoading[url].forEach(function (cb) {
+          (typeof cb == "function") && cb(url);
+        });
+        delete NeedLoading[url];
+      }
       if (count >= list.length) {
-        if (typeof callback == "function") {
-          callback();
-        }
+        (typeof callback == "function") && callback();
       }
     }
     
-    for (var i = 0; i < list.length; i++) { // 加载list数组里的所有文件
-      var url = list[i];
-      
-      if (NeedLoaded[url]) {
-        Complete(url);
-        continue;
-      }
+    list.forEach(function (url) {
       
       var ext = GetExt(url);
+      if (!ext.match(/^\.js|^\.css/)) {
+        console.log("load file faile, unknown type:", url);
+        return;
+      }
+      
+      if (NeedLoaded.hasOwnProperty(url)) {
+        Complete(url);
+        return;
+      }
+      
+      if (NeedLoading.hasOwnProperty(url)) {
+        NeedLoading[url].push(function () {
+          Complete(url);
+        });
+        return;
+      }
+      
       // 不能用ext==".js"，因为有些js文件可能有后缀，例如".js?param=10"
       if (ext.match(/^\.js/)) {
         // 当js加载完之后调用complete
         LoadJs(url, Complete);
       } else if (ext.match(/^\.css/)) {
         LoadCss(url, Complete);
-      } else {
-        console.log("A file can't load", url, ext);
-        Complete();
       }
-    }
+      
+      NeedLoading[url] = [];
+      
+    });
   }
 
   function Ready (func) { // 这个函数用来延迟运行func函数，类似$(document).ready 或者 doucment.onready
@@ -267,92 +289,100 @@
    */
   
   var HTML = "" +
-      "<div class='container-fluid'>\n" +
-        "<div id='DeditorToolbar' class='row'>\n" +
-          "<div class='col-xs-12' style='padding: 0'>\n" +
-            "<div class='btn-group'>\n" +
-              "<button id='EditorUpload' onclick='event.preventDefault()' style='display: none;'></button>" +
-              "<a href='#' id='DeditorBold' title='粗体 <strong> Ctrl+B' class='btn btn-sm'>\n" +
-                "<span class='fa fa-bold'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorItalic' title='斜体 <em> Ctrl+I' class='btn btn-sm'>\n" +
-                "<span class='fa fa-italic'></span>\n" +
-              "</a>\n" +
-            "</div>\n" +
-            "<span style='border-right: 1px solid #ccc;'></span>" +
-            "<div class='btn-group'>\n" +
-              "<a href='#' id='DeditorLink' title='插入链接 <a> Ctrl+L' class='btn btn-sm'>\n" +
-                "<span class='fa fa-link'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorQuote' title='引用 <blockquote> Ctrl+Q' class='btn btn-sm'>\n" +
-                "<span class='fa fa-indent'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorCode' title='代码 <pre><code> Ctrl+K' class='btn btn-sm'>\n" +
-                "<span class='fa fa-code'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorImage' title='插入图片 <img> Ctrl+G' class='btn btn-sm'>\n" +
-                "<span class='fa fa-file-image-o'></span>\n" +
-              "</a>\n" +
-            "</div>\n" +
-            "<span style='border-right: 1px solid #ccc;'></span>" +
-            "<div class='btn-group'>\n" +
-              "<a href='#' id='DeditorOrder' title='有序列表 <ol> Ctrl+O' class='btn btn-sm'>\n" +
-                "<span class='fa fa-list-ol'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorUnorder' title='无序列表 <ul> Ctrl+U' class='btn btn-sm'>\n" +
-                "<span class='fa fa-list-ul'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorHeader' title='标题 <h1>/<h2> Ctrl-H' class='btn btn-sm'>\n" +
-                "<span class='fa fa-header'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorHr' title='分割线 <hr> Ctrl+R' class='btn btn-sm'>\n" +
-                "<span class='fa fa-ellipsis-h'></span>\n" +
-              "</a>\n" +
-            "</div>\n" +
-            "<span style='border-right: 1px solid #ccc;'></span>" +
-            "<div class='btn-group'>\n" +
-              "<a href='#' id='DeditorUndo' title='撤销 Ctrl+Z' class='btn btn-sm'>\n" +
-                "<span class='fa fa-undo'></span>\n" +
-              "</a>\n" +
-              "<a href='#' id='DeditorRedo' title='重做 Ctrl+Y / Ctrl+Shift+Z' class='btn btn-sm'>\n" +
-                "<span class='fa fa-repeat'></span>\n" +
-              "</a>\n" +
-            "</div>\n" +
-            "<a id='DeditorFullscreen' class='btn btn-sm pull-right' href='#'>\n" +
-              "<span class='fa fa-expand'></span>\n" +
-            "</a>\n" +
-            "<a href='#' target='_blank' id='DeditorHelp' class='btn btn-sm pull-right'>\n" +
+      "<div id='DeditorContainer'>\n" +
+        "<div id='DeditorToolbar'>\n" +          
+            
+          "<div class='DeditorButtonGroupRight'>\n" +
+            
+            "<input id='DeditorPreviewEnable' type='checkbox' checked style='margin-top: 8px; padding-right: 10px;'>" +
+            
+            "<label style='padding-right: 10px;'>preview</label>" +
+            
+            "<a href='#' id='DeditorHelp' style=' padding-right: 10px;'>\n" +
               "<span class='fa fa-question'></span>\n" +
             "</a>\n" +
             
-            "<label class='pull-right' style='display: inline; margin-top: 4px;'>preview</label>" +
-            "<input id='DeditorPreviewEnable' class='pull-right' type='checkbox' checked style='display: inline; margin-top: 8px;'>" +
-            
+            "<a id='DeditorFullscreen' href='#' style=' padding-right: 10px;'>\n" +
+              "<span class='fa fa-expand'></span>\n" +
+            "</a>\n" +
+          
             "<a href='#' id='DeditorLost' style='display: none;' class='btn btn-sm pull-right' href='#'>\n" +
               "上次编辑的内容\n" +
             "</a>\n" +
+            
           "</div>\n" +
+        
+      
+          "<button id='EditorUpload' onclick='event.preventDefault()' style='display: none;'></button>" +
+          "<a href='#' id='DeditorBold' title='粗体 <strong> Ctrl+B' class='btn btn-sm'>\n" +
+            "<span class='fa fa-bold'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorItalic' title='斜体 <em> Ctrl+I' class='btn btn-sm'>\n" +
+            "<span class='fa fa-italic'></span>\n" +
+          "</a>\n" +
+          
+          "<span class='DeditorToolbarDivider'></span>" +
+          
+          "<a href='#' id='DeditorLink' title='插入链接 <a> Ctrl+L' class='btn btn-sm'>\n" +
+            "<span class='fa fa-link'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorQuote' title='引用 <blockquote> Ctrl+Q' class='btn btn-sm'>\n" +
+            "<span class='fa fa-indent'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorCode' title='代码 <pre><code> Ctrl+K' class='btn btn-sm'>\n" +
+            "<span class='fa fa-code'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorImage' title='插入图片 <img> Ctrl+G' class='btn btn-sm'>\n" +
+            "<span class='fa fa-file-image-o'></span>\n" +
+          "</a>\n" +
+        
+          "<span class='DeditorToolbarDivider'></span>" +
+          
+          "<a href='#' id='DeditorOrder' title='有序列表 <ol> Ctrl+O'>\n" +
+            "<span class='fa fa-list-ol'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorUnorder' title='无序列表 <ul> Ctrl+U'>\n" +
+            "<span class='fa fa-list-ul'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorHeader' title='标题 <h1>/<h2> Ctrl-H'>\n" +
+            "<span class='fa fa-header'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorHr' title='分割线 <hr> Ctrl+R'>\n" +
+            "<span class='fa fa-ellipsis-h'></span>\n" +
+          "</a>\n" +
+          
+          "<span class='DeditorToolbarDivider'></span>" +
+          
+          "<a href='#' id='DeditorUndo' title='撤销 Ctrl+Z'>\n" +
+            "<span class='fa fa-undo'></span>\n" +
+          "</a>\n" +
+          "<a href='#' id='DeditorRedo' title='重做 Ctrl+Y / Ctrl+Shift+Z'>\n" +
+            "<span class='fa fa-repeat'></span>\n" +
+          "</a>\n" +
+          
         "</div>\n" +
-        "<div id='DeditorInputRow' class='row'>\n" +
-          "<div id='DeditorInputSpace' class='col-md-3' style='display: none;'>\n" +
-          "</div>\n" +
-          "<div id='DeditorInput' class='col-md-6 col-xs-12'>\n" +
+        "<div id='DeditorInputRow'>\n" +
+          "<div id='DeditorInputSpace' style='width: 25%;' style='display: none;'></div>\n" +
+          
+          "<div id='DeditorInput'>\n" +
             "<div id='wmd-button-bar'></div>\n" +
             "<textarea placeholder='在这里输入' spellcheck='false' class='wmd-input' id='wmd-input' name='content'></textarea>\n" +
           "</div>\n" +
-          "<div id='DeditorPreview' class='col-md-6 col-xs-12'>\n" +
+          
+          "<div id='DeditorPreview'>\n" +
             "<div id='wmd-preview' class='wmd-preview'></div>\n" +
           "</div>\n" +
+          
         "</div>\n" +
       "</div>\n" +
-      "<div class='modal fade' id='EditorHelpModal' tabindex='-1' role='dialog' aria-hidden='true' data-backdrop='true' data-keyboard='true'>" +
-        "<div class='modal-dialog'>" +
-          "<div class='modal-content'>" +
-            "<div class='modal-header panel-heading-lc'>" +
-              "<button type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button>" +
-              "<h6 class='modal-title'>帮助</h6>" +
+      "<div id='EditorHelpModal'>" +
+        "<div style='padding: 15px;'>" +
+          "<div>" +
+            "<div>" +
+              "<button id='EditorHelpModalClose'>关闭</button>" +
+              "<h3>帮助</h3>" +
             "</div>" +
-            "<div class='modal-body panel-body-lc'>" +
+            "<div>" +
               "<span><a class='btn btn-sm' href='#'><span class='fa fa-bold'></span></a>&nbsp;&nbsp;  粗体文字按钮，或输入**包裹文字则为粗体文字，例如：<div style='margin-left: 50px;'>**<b>粗体文字</b>**</div></span><hr>" + 
               "<span><a class='btn btn-sm' href='#'><span class='fa fa-italic'></span></a>&nbsp;&nbsp;  斜体文字按钮，或输入*包裹文字则为斜体，例如：<div style='margin-left: 50px;'>*<em>斜体文字</em>*</div></span><hr>" +
               "<span><a class='btn btn-sm' href='#'><span class='fa fa-link'></span></a>&nbsp;&nbsp;  超链接按钮，或直接输入格式：<div style='margin-left: 50px;'>[谷歌](http://www.google.com)</div></span><hr>" +
@@ -366,10 +396,40 @@
               "<span><a class='btn btn-sm' href='#'><span class='fa fa-question'></span></a>&nbsp;&nbsp;  帮助按钮  <a class='btn btn-sm' href='#'><span class='fa fa-expand'></span></a>&nbsp;&nbsp;  全屏按钮</span><hr>" +
               "<span><a target='_blank' href='http://www.moozhi.com/topic/show/540747763a0ef475770873e8'>详细帮助点击这里</a></span>"
             "</div>" +
+            
+            "<div>" +
+            "</div>" +
+            
           "</div><!-- /.modal-content -->" +
         "</div><!-- /.modal-dialog -->" +
+      "</div><!-- /.modal -->" +
+      
+      "<div id='EditorAlertModal'>" +
+        "<div style='padding: 15px;'>" +
+          "<div>" +
+            "<div>" +
+              "<button id='EditorAlertModalClose'>关闭</button>" +
+              "<h3>提示</h3>" +
+            "</div>" +
+            "<div id='EditorAlertModalContent'></div>" +
+          "<div>" +
+        "</div><!-- /.modal-dialog -->" +
       "</div><!-- /.modal -->";
-    
+  
+  
+  function AlertOpen (content, btn) {
+    if (btn) {
+      $("#EditorAlertModalClose").show();
+    } else {
+      $("#EditorAlertModalClose").hide();
+    }
+    $("#EditorAlertModalContent").html(content);
+    $("#EditorAlertModal").show();
+  }
+  
+  function AlertClose () {
+    $("#EditorAlertModal").hide();
+  }
   
   
   // 设置高度函数
@@ -437,9 +497,6 @@
     $("body").css("overflow-y", "auto");
   }
   
-  
-  
-  
   function QiniuUpload () {
     if (typeof Qiniu != "undefined" && document.getElementById("EditorUpload") != null) {
       
@@ -480,14 +537,17 @@
                 var t = document.getElementById("UploadTimer");
                 if (t) t.innerHTML = "已经上传了" + count + "秒";
               }, 1000);
-              Alert("上传中，请不要关闭本窗口<div id='UploadTimer'></div><div id='UploadProgress'></div>", function () {
+              
+              function StopUpdate () {
                 up.stop();
                 up.splice(0, up.files.length);
                 if (uploadTimer !== null) {
                   clearInterval(uploadTimer);
                   uploadTimer = null;
                 }
-              });
+              }
+              
+              AlertOpen("文件上传中<div id='UploadTimer'></div><div id='UploadProgress'></div>", false);
             },
             "UploadProgress": function (up, file) {
               var t = document.getElementById("UploadProgress");
@@ -522,19 +582,18 @@
               }
               
               //$("#EditorInsertPictureModalUrl").val(imgLink);
-              $("#AlertModalBody").html("上传成功");
               if (uploadTimer !== null) {
                 clearInterval(uploadTimer);
                 uploadTimer = null;
                 up.stop();
                 up.splice(0, up.files.length);
-                if ($("#AlertModal").css("display") != "none")
-                  $("#AlertModal").modal("hide");
+                AlertClose();
               }
             },
             "Error": function (up, err, errTip) {
               console.log("Error");
-              Alert("上传错误，确认您选择的文件格式正确，大小小于5MB，支持的格式有：jpg,gif,png,bmp" + "<div><br>错误信息为：<br>" + err.message + "</div>");
+              Alert("上传错误，确认您选择的文件格式正确，大小小于5MB，支持的格式有：jpg,gif,png,bmp"
+                + "<div><br>错误信息为：<br>" + err.message + "</div>", true);
               console.log(up, err, errTip);
               if (uploadTimer) {
                 clearInterval(uploadTimer);
@@ -643,7 +702,7 @@
   function ShowPost () {
     InitConverter();
     
-    var topics = $(Config.contentSel);
+    var topics = $('.editor-content');
     if (!topics.length) return;
     
     topics.each(function () {
@@ -651,7 +710,7 @@
       var textarea = topic.find('textarea');
       if (!textarea.length) return;
       
-      topic.find(".editor-content").each(function () {
+      topic.find(".editor-content-cache").each(function () {
         topic[0].removeChild(this);
       });
       
@@ -662,7 +721,7 @@
       var div = document.createElement("div");
       div.innerHTML = content;
       
-      $(div).addClass("editor-content");
+      $(div).addClass("editor-content-cache");
       
       topic.append($(div));
       
@@ -808,11 +867,13 @@
       return;
     }
     
+    /*
     if (Config.init == true) {
       InsertContent();
       return;
     }
     Config.init = true;
+    */
     
     ShowPost();
     
@@ -939,7 +1000,18 @@
     $("#DeditorHelp").on("click", function (e) {
       e.preventDefault();
       //Alert(helpHTML);
-      $("#EditorHelpModal").modal();
+      $("#EditorHelpModal").show();
+    });
+    
+    $("#EditorHelpModalClose").on("click", function (e) {
+      e.preventDefault();
+      
+      $("#EditorHelpModal").hide();
+    });
+    
+    $("#EditorAlertModalClose").on("click", function (e) {
+      e.preventDefault();
+      AlertClose();
     });
     
     $("#DeditorHelp").on("mouseover", function (e) {
@@ -1004,6 +1076,8 @@
     $("#wmd-input").on("keypress", RefreshPreviewDelay);
     $("#wmd-input").on("keydown", RefreshPreviewDelay);
     
+    window.EditorRefresh = RefreshPreviewDelay;
+    
     
     $("#DeditorPreviewEnable").on("click", function () {
       DeditorPreviewEnable();
@@ -1051,7 +1125,10 @@
       };
     }
     
-    if (document.getElementById("editor") == null && document.querySelector(Config.contentSel) == null) {
+    Config.editor = $("#editor").length;
+    Config.content = $(".editor-content").length;
+    
+    if (!Config.editor && !Config.content) {
       
       //如果页面没有editor元素也没有帖子元素，就走
       if (document.readyState != "complete") {
@@ -1059,49 +1136,10 @@
         return;
       }
       
-    } else if (document.getElementById("editor") == null && document.querySelector(Config.contentSel) != null) {
+    } else {
       
       // 如果页面没有editor，但是有帖子元素，就显示
       // 为了帖子获取所需的文件
-      Need([
-        "http://cdn.staticfile.org/mathjax/2.4.0/MathJax.js?config=TeX-AMS_HTML",
-        "http://cdn.staticfile.org/highlight.js/8.2/styles/monokai_sublime.min.css",
-        "/editor/markdown.min.js",
-        "/editor/editor.css"
-        ], function () {
-          // 不等jquery，直接读取所需文件，但是等document.ready之后才开始转化
-          Ready(function () {
-            ShowPost();
-          });
-      });
-      
-    } else {
-    
-      // 程序分支进入这里，说明有editor，可能没有Config.contentSel
-
-      // 如果有editor的默认值，则设置默认值
-      var editorElement = document.getElementById("editor");
-      
-      // 如果编辑器对象中有textarea，则把其中内容当作默认值，例如<div id="editor"><textarea>abc123</textarea></div>则abc123为默认值
-      for (var i = 0; i < editorElement.children.length; i++) {
-        if (editorElement.children[i].tagName == "TEXTAREA") {
-          Config.value = editorElement.children[i].value;
-          editorElement.removeChild(editorElement.children[i]);
-          break;
-        }
-      }
-      
-      //把编辑器内容写入div
-      editorElement.innerHTML = editorElement.innerHTML + HTML;
-      
-      // 如果编辑器的对象中有data-submitname属性，则获取，例如<div id="editor" data-submitname="topic"></div>
-      if (editorElement.attributes["data-submitname"]) {
-        Config.submitName = editorElement.attributes["data-submitname"].value;
-      }
-      // 设置submitname
-      document.getElementById("wmd-input").attributes["name"].value = Config.submitName;
-      
-      // 为了编辑器获取所需的js和css
       Need([
         "http://cdn.staticfile.org/mathjax/2.4.0/MathJax.js?config=TeX-AMS_HTML",
         "http://cdn.staticfile.org/highlight.js/8.2/styles/monokai_sublime.min.css",
@@ -1109,14 +1147,42 @@
         "/editor/markdown.min.js",
         "/editor/editor.css"
         ], function () {
-          // 上面文件全部加载完毕之后会开始运行Ready函数
           Ready(function () {
-            // 当document.readyState == complete后开始运行EditorInit
-            EditorInit();
+            // 不等jquery，直接读取所需文件，但是等document.ready == complete之后才开始转化
+            
+            if (Config.editor) {
+              // 如果有editor的默认值，则设置默认值
+              var editorElement = $("#editor")[0];
+              
+              // 读取默认值
+              for (var i = 0; i < editorElement.children.length; i++) {
+                if (editorElement.children[i].tagName == "TEXTAREA") {
+                  Config.value = editorElement.children[i].value;
+                  editorElement.removeChild(editorElement.children[i]);
+                  break;
+                }
+              }
+              
+              //把编辑器内容写入div
+              editorElement.innerHTML = editorElement.innerHTML + HTML;
+              
+              // 如果编辑器的对象中有data-submitname属性，则获取，例如<div id="editor" data-submitname="topic"></div>
+              if (editorElement.attributes["data-submitname"]) {
+                Config.submit = editorElement.attributes["data-submit"].value;
+              }
+              // 设置submit name
+              document.getElementById("wmd-input").attributes["name"].value = Config.submit;
+              
+              EditorInit();
+              console.log("Editor & content init");
+            } else {
+              ShowPost();
+              console.log("Editor content only init");
+            }
+            
           });
-        }
-      );
-    
+      });
+      
     }
     
   }

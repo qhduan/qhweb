@@ -32,12 +32,14 @@ app.post("/verify", tool.VerifyPasswordHandle);
 app.post("/password", tool.ChagnePasswordHandle);
 app.post('/upload', multipart(), tool.UploadHandle);
 
+app.get('/js', tool.JS);
+
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/database"));
 
 app.get("*", function (req, res) {
   // 这部分要在所有的其他项目之下，最后处理
-  res.sendFile(__dirname + "/public/index.html");
+  res.redirect("/#" + req.path);
 });
 
 var PORT = config.get("port");

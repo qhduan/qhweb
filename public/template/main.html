@@ -1,211 +1,135 @@
-<div class="container" style="margin: 20px auto;">
+
+
+<div class="ui page grid">
+
   <div class="row">
-    <div class="container-fluid">
-      
-      <div>
-        <div class="dropdown">
-          <a class="dropdown-toggle h1" href="{{ url }}" onclick="event.preventDefault()" type="button" id="dropdownManage2" data-toggle="dropdown" aria-expanded="true">
+    <div class="column">
+      <div class="ui segment">
+        
+        <h1 class="ui header">
+          <a ng-href="#/">
             {{ title }}
-            <small class="pull-right" style="padding-top: 25px;">{{ subtitle }}</small>
           </a>
-          <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage2">
-            <li role="presentation"><a role="menuitem" tabindex="-1" href="#/main">Home</a></li>
-            <li role="presentation" ng-if="!HasKey()"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="Verify()">Login</a></li>
-            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
-            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#/config">Config</a></li>
-            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#/password">Passwd</a></li>
-            <li role="presentation" ng-if="HasKey()"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="LoginOut()">Sign out</a></li>
-          </ul>
-        </div><!-- dropdown -->
+        </h1>
+        
+        <div class="ui right floated header">
+          <div class="ui dropdown">
+            {{ (subtitle && subtitle.length) ? subtitle : "" }}
+            <i class="dropdown icon"></i>
+            <div class="menu">
+              <a ng-show="!HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="Verify()">Login</a>
+              <a ng-show="HasKey()" class="item" href="#/new">New</a>
+              <a ng-show="HasKey()" class="item" href="#/config">Config</a>
+              <a ng-show="HasKey()" class="item" href="#/password">Passwd</a>
+              <a ng-show="HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="LoginOut()">Sign out</a>
+              <a ng-show="false" ng-init="dropdown()"></a>
+            </div>
+          </div>
+        </div>
+        
       </div>
-      
-      
-      <hr>
     </div>
   </div>
   
   <div class="row">
     
-    <div class="col-md-3 hidden-xs hidden-sm"><!-- 左侧栏 -->
-      <div class="container-fluid">
-        <div class="row">
+    <div class="five wide column">
+      
+      <div ng-repeat="article in articles" class="ui {{ $first?'top':'' }}{{ $last?'bottom':'' }} attached segment">
+        <a href="#/show/{{ article.id }}">
+          {{ article.title }}
+        </a>
+      </div>
+      
+      <div class="ui segment">
+        <ul class="ui list">
+          <li ng-repeat="it in categories">
+            <a style="{{ it.name == category ? 'color: red;' : ''}}" href="#/category/{{ it.name }}">
+              {{ it.name }}({{ it.value }})
+            </a>
+          </li>
+        </ul>
+      </div>
         
-          <div class="list-group" ng-show="articles && articles.length">
-            <a ng-repeat="article in articles"
-              class="list-group-item"
-              href="#/show/{{ article.id }}"
-            > {{ article.title }} </a>
-          </div>          
-          
-          <div class="panel panel-default" ng-show="categories && categories.length">
-            <div class="panel-body list-group">
-              <ul>
-                <li ng-repeat="it in categories" style="margin: 10px 0;">
-                  <a  style="{{ it.name == category ? 'color: red;' : ''}}" href="#/main?category={{ it.name }}">{{ it.name }}({{ it.value }})</a>
-                </li>
-              </ul>
+      
+      <div class="ui segment">
+        
+        <div class="ui floating dropdown labeled search fluid button">
+          <div class="text">
+            Archive
+          </div>
+          <i class="dropdown icon"></i>
+          <div class="menu">
+            <div ng-repeat="it in archives" class="item">
+              <a ng-href="#/archive/{{ it.name }}">
+                {{ it.name }} - {{ it.value }}
+              </a>
+              <div ng-if="$last">
+                <div ng-init="dropdown()"></div>
+              </div>
             </div>
-          </div><!-- /panel -->
-          
-          <div class="panel panel-default">
-            <div class="panel-body list-group">
-              
-              <select class="form-control" style="margin: 10px 0;" ng-model="archiveSelected" ng-change="GoArchive(archiveSelected)">
-                <option>Archive</option>
-                <option ng-repeat="it in archives" ng-selected="it.name == archive" value="{{ it.name }}">{{ it.name }} - {{ it.value }}</option>
-              </select>
-              
-              <form class="input-group" ng-submit="Search(search)" style="margin: 10px 0;">
-                <input type="text" ng-model="search" class="form-control" placeholder="Search for...">
-                <span class="input-group-btn">
-                  <button class="btn btn-default" type="submit">Go!</button>
-                </span>
-              </form><!-- /input-group -->
-              
+          </div>
+        </div>
+        
+        <div class="ui horizontal divider"></div>
+        
+        <form ng-submit="Search(search)">
+          <div class="ui search">
+            <div class="ui icon input">
+              <div class="ui left icon action input">
+                <i class="search icon"></i>
+                <input ng-model="search" placeholder="...keywords" type="text">
+                <div ng-click="Search(search)" class="ui submit button">Search</div>
+              </div>
             </div>
-          </div><!-- /panel -->
-          
-        </div><!-- /row -->
-      </div><!-- /container-fluid -->
-    </div><!-- /左侧栏 -->
+          </div>
+        </form>
+        
+      </div>
+      
+    </div>
     
-    <div class="col-md-9 col-xs-12"><!-- 右侧栏 -->
-      
-      <div class="container-fluid">
+    <div class="eleven wide column">
         
-        <div class="row">
-          
-          <div class="visible-xs-block visible-sm-block"><!-- nav while thin screen -->
-            
-            <ol class="breadcrumb" style="margin: 10px 0;" ng-show="articles && articles.length">
-              <li ng-repeat="article in articles">
-                <a href="#/show/{{ article.id }}">
-                  {{ article.title }}
-                </a>
-              </li>
-            </ol>
-            
-            <ol class="breadcrumb" style="margin: 10px 0;">
-              <li ng-repeat="it in categories">
-                <a  style="{{ it.name == category ? 'color: red;' : ''}}" href="#/main?category={{ it.name }}">{{ it.name }}({{ it.value }})</a>
-              </li>
-            </ol>
-            
-            <div style="margin: 10px 0;">
-              <select class="form-control" ng-model="archiveSelected" ng-change="GoArchive(archiveSelected)">
-                <option>Archive</option>
-                <option ng-repeat="it in archives" ng-selected="it.name == archive" value="{{ it.name }}" >{{ it.name }} - {{ it.value }}</option>
-              </select>
-            </div>
-            
-            <form class="input-group" ng-submit="Search(search)" style="margin: 10px 0;">
-              <input type="text" ng-model="search" class="form-control" placeholder="Search for...">
-              <span class="input-group-btn">
-                <button class="btn btn-default" type="submit">Go!</button>
+        <div ng-repeat="post in posts" class="ui {{ $first?'top':'' }}{{ $last?'bottom':'' }} attached segment">
+          <p>
+            <a href="#/show/{{ post.id }}">
+              <span ng-if="post.category && post.category.length">
+                [{{ post.category }}]
               </span>
-            </form><!-- /input-group -->
-            
-          </div><!-- /nav while thin screen -->
+              <span ng-if="post.accessible == 'private'">
+                *
+              </span>{{ post.title }}
+              <span class="" style="float: right;">{{ post.date }}</span>
+            </a>
+          </p>
+        </div>
+        
+        <div class="ui pagination menu">
+          <a ng-href="{{ param(1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
+            <i class="angle double left icon"></i>
+          </a>
           
-          <div><!-- post list -->
-            <div ng-show="message && message.length" class="text-center">
-              <h3>{{ message }}</h3>
-            </div>
-            
-            <div class="list-group">
-              <a ng-repeat="post in posts"
-                class="list-group-item"
-                href="#/show/{{ post.id }}"
-              >
-                <span ng-if="post.category && post.category.length">
-                  [{{ post.category }}]
-                </span>
-                <span ng-if="post.accessible == 'private'">
-                  *
-                </span>
-                {{ post.title }}
-                <small class="hidden-xs pull-right">
-                  <span>
-                    {{ post.date }}
-                  </span>
-                </small>
-              </a><!-- /a -->
-            </div><!-- /list-group -->
-            
-          </div><!-- /post list -->
+          <a ng-href="{{ param(page - 1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
+            <i class="angle left icon"></i>
+          </a>
           
+          <a ng-repeat="num in range(3, page)" ng-href="{{ param(num) }}" class="{{ page==num?'active':'' }} item {{ ((num>=1)&&(num<=maxPage))?'':'disabled' }}">
+            {{ ((num>=1)&&(num<=maxPage)) ? num : '' }}
+          </a>
           
-          <nav ng-show="posts && posts.length"><!-- pagination -->
-            <ul class="pagination" style="width: 100%;">
-              
-              <li ng-if="page != 1"><!-- 不是第一页，显示正常第一页按钮 -->
-                <a href="#/main{{ param(1) }}" title="Firt p1">
-                  <span class="glyphicon glyphicon-step-backward"></span>
-                  1
-                </a>
-              </li>
-              <li ng-if="page == 1" class="disabled"><!-- 是第一页，显示禁用了的 -->
-                <a href="#" onclick="event.preventDefault()">
-                  <span class="glyphicon glyphicon-step-backward"></span>
-                  1
-                </a>
-              </li>
-              
-              <li ng-if="page != 1"><!-- 不是第一页，显示正常前一页按钮 -->
-                <a href="#/main{{ param(page-1) }}" title="Prev P{{ page - 1}}">
-                  <span class="glyphicon glyphicon-chevron-left"></span>
-                </a>
-              </li>
-              <li ng-if="page == 1" class="disabled"><!-- 是第一页，显示禁止了的前一页按钮 -->
-                <a href="#" onclick="event.preventDefault()">
-                  <span class="glyphicon glyphicon-chevron-left"></span>
-                </a>
-              </li>
-              
-              <li ng-repeat="num in range(3, page) track by $index"
-                ng-class="{disabled: num <= 0 || num > maxPage, active: num == page}">
-                
-                <a href="#" ng-if="num <= 0 || num > maxPage" onclick="event.preventDefault()">
-                  &nbsp;
-                </a><!-- 无页，显示禁止了的空按钮 -->
-                
-                <a href="#/main{{ param(num) }}" ng-if="num > 0 && num <= maxPage" title="page {{ num }}">
-                  {{ num }}
-                </a><!-- 正常页号按钮 -->
-                
-              </li>
-              
-              <li ng-if="page != maxPage"><!-- 不是最后一页，显示正常下一页按钮 -->
-                <a href="#/main{{ param(page + 1) }}" title="Next P{{ page + 1 }}">
-                  <span class="glyphicon glyphicon-chevron-right"></span>
-                </a>
-              </li>
-              <li ng-if="page == maxPage" class="disabled"><!-- 是最后一页，显示禁止了的下一页按钮 -->
-                <a href="#" onclick="event.preventDefault()">
-                  <span class="glyphicon glyphicon-chevron-right"></span>
-                </a>
-              </li>
-              
-              <li ng-if="page != maxPage"><!-- 不是最后一页，显示正常跳转到最后一页按钮 -->
-                <a href="#/main{{ param(maxPage) }}" title="Last P{{ maxPage }}">
-                  {{ maxPage }}
-                  <span class="glyphicon glyphicon-step-forward"></span>
-                </a>
-              </li>
-              <li ng-if="page == maxPage" class="disabled"><!-- 是最后一页，显示禁止了的最后一页按钮 -->
-                <a href="#" onclick="event.preventDefault()">
-                  {{ maxPage }}
-                  <span class="glyphicon glyphicon-step-forward"></span>
-                </a>
-              </li>
-              
-            </ul>
-          </nav><!-- /pagination -->
+          <a ng-href="{{ param(page + 1) }}" class="icon item {{ (page+1)>maxPage?'disabled':'' }}">
+            <i class="angle right icon"></i>
+          </a>
           
-        </div><!-- /row -->
-      </div><!-- /container-fluid -->
-      
-    </div><!-- /右侧栏 -->
+          <a ng-href="{{ param(maxPage) }}" class="icon item {{ page>=maxPage?'disabled':'' }}">
+            <i class="angle double right icon"></i>
+          </a>
+        </div>
+        
+    </div>
     
   </div>
+
+
 </div>

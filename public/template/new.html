@@ -1,106 +1,136 @@
-<div class="container" style="margin: 20px auto;">
+
+
+<form id="uploadform" onsubmit="Submit(event)" method="post" target="target" enctype="multipart/form-data" action="/upload" role="form">
+  <input id="file" name="file" type="file" onchange="$('#filepath').val($('#file').val());" style="display: none;">
+  <input type="hidden" name="key">
+  <input type="hidden" name="date">
+</form>
+
+
+<div class="ui page grid">
   <div class="row">
-    <div class="container-fluid">
-      <a class="h1" href="#/main">
-        Home
-      </a>
-      <span class="h1">&nbsp;/&nbsp;</span>
-      <a class="h1" href="#/new">
-        New
-      </a>
-      <hr>
+    <div class="column">
+      <div class="ui segment">
+        
+        
+          <h1 class="ui dividing header">
+            <a href="#/">Home</a> / New
+          </h1>
+          
+          <div class="ui form">
+            
+            <div class="field">
+              <label>Title</label>
+              <input ng-model="title" type="text" placeholder="Post Title">
+            </div>
+            
+            <div class="three fields">
+            
+              <div class="field">
+                <label>Type</label>
+                <select ng-model="choiceType" class="ui dropdown">
+                  <option value="post">Post</option>
+                  <option value="article">Article</option>
+                </select>
+              </div>
+              
+            
+              <div class="field {{ choiceType=='post'?'':'disabled' }}">
+                <label>Accessible</label>
+                <select ng-model="choiceAccessible" class="ui dropdown {{ choiceType=='post'?'':'disabled' }}">
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              
+              <div class="field">
+                <label>Date</label>
+                <input ng-model="date" id="date" type="text" class="form-control" style="text-align: center;" readOnly>
+              </div>
+            
+            </div>
+            
+            <div class="three fields">
+              
+              <div class="field {{ choiceType=='post'?'':'disabled' }}">
+                <label>Category</label>
+                <input class="{{ choiceType=='post'?'':'disabled' }}" type="text" ng-model="category" placeholder="category">
+              </div>
+              
+              <div class="field {{ choiceType=='post'?'':'disabled' }}">
+                <label>Category we have</label>
+                <select class="ui dropdown {{ choiceType=='post'?'':'disabled' }}">
+                  <option>Categories</option>
+                  <option ng-repeat="it in categories" ng-click="ChangeCategory(it.name)" value="{{ it.name }}">{{ it.name }}</option>
+                </select>
+              </div>
+            
+              <div class="field">
+                <label>Password</label>
+                <input ng-model="key" id="key" type="password" class="form-control" style="text-align: center;" placeholder="Pass Key">
+              </div>
+            
+            </div>
+            
+            <div class="three fields">
+            
+              <div class="field">
+                <label>Upload File</label>
+                <button onclick="$('#file').click()" class="ui button fluid">
+                  <span class="glyphicon glyphicon-folder-open"></span> Browse
+                </button>
+              </div>
+              
+              <div class="field">
+                <label>File Path</label>
+                <input readonly id="filepath" class="form-control" type="text">
+              </div>
+              
+              <div class="field">
+                <label>Click to Upload</label>
+                <button onclick="Upload(event)" class="ui button fluid">
+                  <span class="glyphicon glyphicon-cloud-upload"></span> Upload
+                </button>
+              </div>
+            
+            </div>
+            
+            
+            <div class="field">
+              <label>Content</label>
+            </div>
+          
+          </div>
+            
+          <div id="editor"></div>
+    
+          <iframe id="target" name="target" src="" style="width: 0; height: 0; border: 0px solid #fff;"></iframe>
+          
+          <div class="field">
+            <button ng-click="Submit()" class="ui primary button right floated">
+              <span class="glyphicon glyphicon-floppy-disk"></span> Submit
+            </button>
+          </div>
+          
+      </div>
     </div>
   </div>
-
-  <div class="row">
-    <div class="form-group col-xs-12">
-      <input ng-model="title" type="text" class="form-control" style="text-align: center;" placeholder="Post Title">
-    </div>
-  </div>
-
-  <form id="uploadform" onsubmit="Submit(event)" method="post" target="target" enctype="multipart/form-data" action="/upload" role="form">
-    <input id="file" name="file" type="file" onchange="$('#filepath').val($('#file').val());" style="display: none;">
-    <input type="hidden" name="key">
-    <input type="hidden" name="date">
-  </form>
-
-  <div class="row">
-    <div class="form-group col-sm-2">
-      <select ng-model="choiceType" class="form-control">
-        <option value="post">post</option>
-        <option value="article">article</option>
-      </select>
-    </div>
-    
-    <div class="form-group col-sm-2">
-      <select ng-disabled="choiceType != 'post'" ng-model="choiceAccessible" class="form-control">
-        <option value="public">public</option>
-        <option value="private">private</option>
-      </select>
-    </div>
-    
-    <div class="form-group col-sm-6">
-      <input ng-model="date" type="text" class="form-control" style="text-align: center;" readOnly>
-    </div>
-    
-    <div class="form-group col-sm-2">
-      <input ng-model="key" type="password" class="form-control" style="text-align: center;" placeholder="Pass Key">
-    </div>
-    
-  </div>
-
-  <div class="row">
-    
-    <div class="col-sm-2">
-      <input ng-disabled="choiceType != 'post'" type="text" ng-model="category" id="category" class="form-control" placeholder="category">
-    </div>
-    
-    <div class="col-sm-2">
-      <select ng-disabled="choiceType != 'post'"class="form-control">
-        <option>Categories</option>
-        <option ng-repeat="it in categories" ng-click="ChangeCategory(it.name)" value="{{ it.name }}">{{ it.name }}</option>
-      </select>
-    </div>
-    
-    <div class="col-sm-2">
-      <button onclick="$('#file').click()" class="btn btn-default form-control">
-        <span class="glyphicon glyphicon-folder-open"></span> Browse
-      </button>
-    </div>
-    <div class="col-sm-4">
-      <input readonly id="filepath" class="form-control" type="text">
-    </div>
-    <div class="col-sm-2">
-      <button onclick="Upload(event)" class="btn btn-default form-control">
-        <span class="glyphicon glyphicon-cloud-upload"></span> Upload
-      </button>
-    </div>
-  </div>
-
-  <div id="editor"></div>
-    
-  <iframe id="target" name="target" src="" style="width: 0; height: 0; border: 0px solid #fff;"></iframe>
-
-  <div>
-    <button ng-click="Submit()" class="btn btn-primary pull-right">
-      <span class="glyphicon glyphicon-floppy-disk"></span> Submit
-    </button>
-  </div>
-
 </div>
 
 <script>
+  $('.ui.dropdown').dropdown();
   
   function callback(info, str) {
-    if (info == "error") {
-      alertify.alert(str);
-    } else if (info == "success") {
+    if (info == "success") {
       var c = $("textarea[name='content']")[0];
       if (str.match(/(\.jpg|\.jpeg|\.png|\.gif)$/i)) {
         c.value += "\n![](" + str + ")\n";
       } else {
         c.value += "\n[" + str + "](" + str + ")\n";
       }
+      window.EditorRefresh && window.EditorRefresh();
+    } else {
+      alertify.alert(str || "Unknown Error");
     }
   }
 

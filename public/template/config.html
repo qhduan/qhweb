@@ -1,37 +1,51 @@
-<div class="container" style="margin: 20px auto;">
-  <div class="row">
-    <div class="container-fluid">
-      <a class="h1" href="#/main">
-        Home
-      </a>
-      <span class="h1">&nbsp;/&nbsp;</span>
-      <a class="h1" href="#/config">
-        Config
-      </a>
-      <hr>
-    </div>
-  </div>
+<div class="ui page grid">
 
   <div class="row">
-    <div class="col-xs-12">
-      <label>Site Name:</label>
-      <input class="form-control" ng-model="siteName" type="text">
-      
-      <label>Site Subtitle:</label>
-      <input class="form-control" ng-model="siteSubtitle" type="text">
-      
-      <label>URL:</label>
-      <input class="form-control" ng-model="url" type="text">
-      
-      <label>Item of Page:</label>
-      <input class="form-control" ng-model="itemOfPage" type="text">
-      
-      <label>Key:</label>
-      <input class="form-control" ng-model="key" type="password">
-      
-      <button class="btn btn-primary" ng-click="Submit()">Submit</button>
-    </div>
-  </div>
   
+    <div class="column">
+      
+      <div class="ui segment">
+    
+        <div class="ui form">
+        
+          <h1 class="ui dividing header">
+            <a href="#/">Home</a> / Config
+          </h1>
+          
+          <div class="field">
+            <label>Site Name</label>
+            <input ng-model="siteName" type="text">
+          </div>
+          
+          <div class="field">
+            <label>Site Subtitle</label>
+            <input ng-model="siteSubtitle" type="text">
+          </div>
+          
+          <div class="field">
+            <label>URL</label>
+            <input ng-model="url" type="text">
+          </div>
+          
+          <div class="field">
+            <label>Item of Page</label>
+            <input ng-model="itemOfPage" type="text">
+          </div>
+          
+          <div class="field">
+            <label>Key</label>
+            <input ng-model="key" type="password">
+          </div>
+          
+          <div class="ui submit button" ng-click="Submit()">Save</div>
+        
+        </div>
+      
+      </div>
+    
+    </div>
+  
+  </div>
+
 </div>
 

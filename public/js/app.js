@@ -1,14 +1,15 @@
 (function () {
   "use strict";
+  
+  //override defaults
+  alertify.defaults.transition = "zoom";
+  alertify.defaults.theme.ok = "ui positive button";
+  alertify.defaults.theme.cancel = "ui black button";
 
   var qhweb = angular.module("qhweb", ["ngRoute", "ngResource", "ngAnimate", "ngCookies", "qhwebControllers"]);
 
   qhweb.config(["$routeProvider", "$locationProvider", function ($routeProvider, $locationProvider) {
     $routeProvider.
-      when("/main", {
-        templateUrl: "template/main.html",
-        controller: "mainController"
-      }).
       when("/show/:id", {
         templateUrl: "template/show.html",
         controller: "showController"
@@ -16,6 +17,30 @@
       when("/edit/:id", {
         templateUrl: "template/edit.html",
         controller: "editController"
+      }).
+      when("/archive/:archive/:page", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
+      }).
+      when("/archive/:archive", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
+      }).
+      when("/search/:search/:page", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
+      }).
+      when("/search/:search", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
+      }).
+      when("/category/:category/:page", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
+      }).
+      when("/category/:category", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
       }).
       when("/new", {
         templateUrl: "template/new.html",
@@ -29,8 +54,16 @@
         templateUrl: "template/password.html",
         controller: "passwordController"
       }).
+      when("/:page/", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
+      }).
+      when("/", {
+        templateUrl: "template/main.html",
+        controller: "mainController"
+      }).
       otherwise({
-        redirectTo: "/main"
+        redirectTo: "/"
       });
     $locationProvider.html5Mode(true);
   }]);
@@ -58,7 +91,7 @@
         }
         if (keys.match(/main$/)) {
           keys = "";
-          window.location.href = "#/main";
+          window.location.href = "#/";
         }
       }
     });
@@ -93,21 +126,26 @@
     }
     
     function Verify (callback) {
-      alertify.prompt("Please input your key:", function (evt, value) {
-        if (evt && value.trim().length) {
-          $http.post("/verify", {key: value})
-            .success(function (result) {
-              if (result.ok) {
-                SetKey(value);
-                alertify.success("Congratulation, your key is right!", function () {
-                  if (typeof callback == "function") callback();
-                });
-              } else {
-                alertify.error(result.message || "System Error");
-              }
-            });
-        }
-      });
+      alertify
+        .prompt()
+        .set("title", "Warning")
+        .set("message", "Please input your key:")
+        .set("onok", function (evt, value) {
+          if (typeof value == "string" && value.trim().length) {
+            $http.post("/verify", {key: value})
+              .success(function (result) {
+                if (result.ok) {
+                  SetKey(value);
+                  alertify.success("Congratulation, your key is right!", function () {
+                    if (typeof callback == "function") callback();
+                  });
+                } else {
+                  alertify.error(result.message || "System Error");
+                }
+              });
+          }
+        })
+        .show();
     }
     
     function LoginOut () {

@@ -1,50 +1,39 @@
-<div class="container" style="margin: 20px auto;">
-  <div class="row">
-    <div class="container-fluid">
-      
-      <div>
-        <div class="dropdown">
-          <a href="#/main" class="h1">
-            Home
-          </a>
-          <span class="h1">&nbsp;/&nbsp;</span>
-          <a href="#" onclick="event.preventDefault()" class="dropdown-toggle h1" type="button" id="dropdownManage1" data-toggle="dropdown" aria-expanded="true">
-              {{ title }}
-          </a>
-          <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownManage1" style="margin-left: 135px;">
-            <li ng-if="!HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="Verify()">Login</a></li>
-            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#/edit/{{ id }}">Edit</a></li>
-            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#/new">New</a></li>
-            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="Delete()">Delete</a></li>
-            <li ng-if="HasKey()" role="presentation"><a role="menuitem" tabindex="-1" href="#" onclick="event.preventDefault()" ng-click="LoginOut()">Sign Out</a></li>
-          </ul>
-        </div>
-      </div>
-      
-    </div>
-    <div class="container-fluid">
-      <hr>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="col-xs-12">
-      <div ng-show="message && message.length" class="text-center">
-        <h3>{{ message }}</h3>
-      </div>
-      <div id="content" class="topic-content" style="font-size: 1.2em;">
-        <textarea ng-bind="fetchContent" style="display: none;"></textarea>
-      </div>
-    </div>
-  </div>
+<div class="ui page grid">
   
   <div class="row">
-    <div class="container-fluid">
-      <hr>
-      
-      <div>
+    <div class="column">
+      <div class="ui segment">
+        <h1 class="ui dividing header">
+          <a href="#/">Home</a> /
+          
+          <div class="ui dropdown">
+            {{ title }}
+            <i class="dropdown icon"></i>
+            <div class="menu">
+              <a ng-show="!HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="Verify()">Login</a>
+              <a ng-show="HasKey()" class="item" href="#/edit/{{ id }}">Edit</a>
+              <a ng-show="HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="Delete()">Delete</a>
+              <a ng-show="HasKey()" class="item" href="#/new">New</a>
+              <a ng-show="HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="LoginOut()">Sign out</a>
+              <a ng-show="false" ng-init="dropdown()"></a>
+            </div>
+          </div>
+          
+          
+        </h1>
         
-        <div ng-show="next"><a href="#/show/{{ next.id }}">后一篇《{{ next.title }}》</a></div>
+        <div ng-show="message && message.length" class="text-center">
+          <h3>{{ message }}</h3>
+        </div>
+        <div id="content" class="editor-content" style="font-size: 1.2em;">
+          <textarea ng-bind="fetchContent" style="display: none;"></textarea>
+        </div>
+        
+        <div class="ui divider"></div>
+        
+        
+        
+        <div ng-show="next" style="float: right;"><a href="#/show/{{ next.id }}">后一篇《{{ next.title }}》</a></div>
         
         <div ng-show="prev"><a href="#/show/{{ prev.id }}">前一篇《{{ prev.title }}》</a></div>
         
@@ -53,9 +42,15 @@
         <div>{{ category }}</div>
         
         <div>{{ createDate }} {{ editDate }}</div>
+        
       </div>
-      
     </div>
   </div>
+  
+  <div class="row">
+    <div class="column">
+    </div>
+  </div>
+  
 </div>
 

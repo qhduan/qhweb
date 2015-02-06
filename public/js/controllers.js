@@ -25,16 +25,16 @@
     
     $scope.Search = function (s) {
       if (s.trim().length) {
-        Util.Go("/main?search=" + encodeURIComponent(s));
+        Util.Go("/search/" + encodeURIComponent(s));
       } else {
-        Util.Go("/main");
+        Util.Go("/");
       }
     };
     
     $scope.GoArchive = function (choice) {
       if (choice.length) {
         if (choice != "Archive") {
-          Util.Go("/main?archive=" + encodeURIComponent(choice));
+          Util.Go("/archive/" + encodeURIComponent(choice));
         }
       }
     };
@@ -47,28 +47,35 @@
       return r;
     };
     
+    $scope.dropdown = function () {
+      $('.dropdown').dropdown({ transition: 'drop' });
+    };
+    
     $scope.param = function (page) {
       var p = [];
       
       if ($scope.category && $scope.category.length) {
-        p.push("category=" + $scope.category);
+        p.push("category");
+        p.push($scope.category);
       }
       
       if ($scope.archive && $scope.archive.length) {
-        p.push("archive=" + $scope.archive);
+        p.push("archive");
+        p.push($scope.archive);
       }
       
       if ($scope.search && $scope.search.length) {
-        p.push("search=" + encodeURIComponent($scope.search));
+        p.push("search");
+        p.push(encodeURIComponent($scope.search));
       }
       
-      if (page > 1) {
-        p.push("page=" + page);
+      if (page >= 1 && page <= $scope.maxPage) {
+        p.push(page);
       }
       
       if (p.length <= 0) return "";
       
-      return "?" + p.join("&");
+      return "/#/" + p.join("/");
     };
       
     if (qhwebConfig) {
@@ -157,6 +164,7 @@
     
     GetInfo();
     GetPosts();
+    
   }]);
 
 
@@ -253,6 +261,10 @@
     var id = $routeParams.id;
     $scope.content = "";
     $scope.message = "Loading...";
+    
+    $scope.dropdown = function () {
+      $('.dropdown').dropdown({ transition: 'drop' });
+    };
       
     if (typeof id != "string" || id.trim().length <= 0) {
       return alertify.alert("Invalid arguments", Util.GoBack);
@@ -327,13 +339,14 @@
   qhwebControllers.controller("editController", [
     "$scope", "$routeParams", "$http", "Blog", "Util",
     function ($scope, $routeParams, $http, Blog, Util) {
-    Util.Title("Edit Post");
+    Util.Title("Edit");
     $scope.title = "";
     $scope.key = "";
     $scope.categories = [];
     $scope.category = "";
     $scope.categoryChoice = "";
     $scope.choiceAccessible = "public";
+    $scope.choiceType = "post";
     
     $scope.changeCategory = function (c) {
       $scope.category = c;
