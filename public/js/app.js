@@ -71,6 +71,14 @@
   qhweb.run(["$rootScope", "$location", "$http", "$document", "$cookieStore",
     function ($rootScope, $location, $http, $document, $cookieStore) {
       
+    $rootScope.$on("$routeChangeStart", function () {
+      $rootScope.pageChanging = "Page in loading, plase wait a moment...";
+    });
+      
+    $rootScope.$on("$routeChangeSuccess", function () {
+      $rootScope.pageChanging = "";
+    });
+      
     var keys = "";
     $document.on("keypress", function (event) {
       var k = String.fromCharCode(event.which).match(/\w/);
