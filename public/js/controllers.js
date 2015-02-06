@@ -69,8 +69,12 @@
         p.push(encodeURIComponent($scope.search));
       }
       
-      if (page >= 1 && page <= $scope.maxPage) {
+      if (page > 1 && page <= $scope.maxPage) {
         p.push(page);
+      }
+      
+      if (p.length == 0 && page == 1) {
+        return "#/";
       }
       
       if (p.length <= 0) return "";

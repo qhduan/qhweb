@@ -38,12 +38,6 @@
 </head>
 <body>
   
-  <div ng-if="pageChanging && pageChanging.length" style="position: fixed; top: 50px; left: 0; right: 0; margin: 0 auto; z-index: 9988; width: 400px; background-color: white; border: 1px solid #ccc;">
-    <p>
-      <h1>{{ pageChanging }}</h1>
-    </p>
-  </div>
-  
   <div class="view-animate-container">
     <div ng-view class="view-animate"></div>
   </div>
