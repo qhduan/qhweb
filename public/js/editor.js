@@ -294,9 +294,12 @@
             
           "<div class='DeditorButtonGroupRight'>\n" +
             
-            "<input id='DeditorPreviewEnable' type='checkbox' checked style='margin-top: 8px; padding-right: 10px;'>" +
-            
-            "<label style='padding-right: 10px;'>preview</label>" +
+            "<div id='DeditorPreviewEnableContainer'>" +
+              "<div>" +
+                "<input id='DeditorPreviewEnable' type='checkbox' checked>" +
+                "<label for='DeditorPreviewEnable'>preview</label>" +
+              "</div>" +
+            "</div>" +
             
             "<a href='#' id='DeditorHelp' style=' padding-right: 10px;'>\n" +
               "<span class='fa fa-question'></span>\n" +
@@ -362,7 +365,7 @@
           
         "</div>\n" +
         "<div id='DeditorInputRow'>\n" +
-          "<div id='DeditorInputSpace' style='width: 25%;' style='display: none;'></div>\n" +
+          "<div id='DeditorInputSpace'><span><br></span></div>\n" +
           
           "<div id='DeditorInput'>\n" +
             "<div id='wmd-button-bar'></div>\n" +
@@ -1144,8 +1147,7 @@
         "http://cdn.staticfile.org/mathjax/2.4.0/MathJax.js?config=TeX-AMS_HTML",
         "http://cdn.staticfile.org/highlight.js/8.2/styles/monokai_sublime.min.css",
         "http://cdn.staticfile.org/font-awesome/4.1.0/css/font-awesome.min.css",
-        "/editor/markdown.min.js",
-        "/editor/editor.css"
+        "/editor/markdown.min.js"
         ], function () {
           Ready(function () {
             // 不等jquery，直接读取所需文件，但是等document.ready == complete之后才开始转化

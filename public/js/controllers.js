@@ -311,7 +311,7 @@
         setTimeout(function () {
           $scope.$apply();
           window.LoadEditor();
-        }, 200);
+        }, 1);
         
         $scope.Delete = function () {
           if (!Util.HasKey()) {
@@ -343,123 +343,125 @@
   qhwebControllers.controller("editController", [
     "$scope", "$routeParams", "$http", "Blog", "Util",
     function ($scope, $routeParams, $http, Blog, Util) {
-    Util.Title("Edit");
-    $scope.title = "";
-    $scope.key = "";
-    $scope.categories = [];
-    $scope.category = "";
-    $scope.categoryChoice = "";
-    $scope.choiceAccessible = "public";
-    $scope.choiceType = "post";
-    
-    $scope.changeCategory = function (c) {
-      $scope.category = c;
-    };
-    
-    if (Util.HasKey()) {
-      $scope.key = Util.Key();
-    }
-
-    var id = $routeParams.id;
-    $scope.id = id;
-    $scope.content = "";
+      Util.Title("Edit");
+      $scope.title = "";
+      $scope.key = "";
+      $scope.categories = [];
+      $scope.category = "";
+      $scope.categoryChoice = "";
+      $scope.choiceAccessible = "public";
+      $scope.choiceType = "post";
       
-    if (typeof id != "string" || id.trim().length <= 0) {
-      return alertify.alert("Invalid arguments", function () {
-        Util.GoBack();
-      });
-    }
-    
-    $scope.ChangeCategory = function (c) {
-      $scope.category = c;
-    };
-    
-    (function GetCategories () {
-      $http.post("/info")
-        .success(function (result) {
-          $scope.categories = result.categories;
-        });
-    })();
-    
-    Blog.fetch({id: id}, function (result) {
-      if (result.message) {
-        alertify.alert(result.message, function () {
+      $scope.changeCategory = function (c) {
+        $scope.category = c;
+      };
+      
+      if (Util.HasKey()) {
+        $scope.key = Util.Key();
+      }
+
+      var id = $routeParams.id;
+      $scope.id = id;
+      $scope.content = "";
+        
+      if (typeof id != "string" || id.trim().length <= 0) {
+        return alertify.alert("Invalid arguments", function () {
           Util.GoBack();
         });
-      } else {
-        $scope.title = result.title;
-        
-        $scope.type = result.type || "post";
-        
-        $scope.createDate = result.date;
-        
-        if (result.accessible && result.accessible == "private") {
-          $scope.choiceAccessible = "private";
-        }
-        
-        if (result.category && result.category.length) {
-          $scope.category = result.category;
-          $scope.categoryChoice = result.category;
-        }
-        
-        var ta = document.createElement("textarea");
-        ta.style.display = "none";
-        ta.value = result.content;
-        document.getElementById("editor").appendChild(ta);
-        setTimeout(window.LoadEditor, 200);
-        
-        (function InsertDate () {
-          var now = new Date();
-          now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
-          $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
-        })(); // autorun
-        
-        $scope.Submit = function () {
-          if ($("textarea[name='content']").length == 0) return;
-          var content = $("textarea[name='content']").val().trim();
-          
-          var title = $scope.title.trim();
-          var date = $scope.date.trim();
-          var key = $scope.key.trim();
-          var category = $scope.category.trim();
-          
-          var accessible = $scope.choiceAccessible;
-          
-          if (title == "") {
-            return alertify.alert("title can't be empty!");
-          }
-          if (date == "") {
-            return alertify.alert("date can't be empty!");
-          }
-          if (key == "") {
-            return alertify.alert("key can't be empty!");
-          }
-          if (content == "") {
-            return alertify.alert("content can't be empty!");
-          }
-          var data = {
-            id: id,
-            title: title,
-            date: date,
-            key: key,
-            content: content,
-            category: category,
-            accessible: accessible
-          };
-    
-          Blog.save(data, function (result) {
-            if (result.success) {
-              alertify.alert("Post edit successful", Util.GoBack);
-            } else {
-              alertify.error(result.message || "System Error");
-            }
-          });
-        }; // Submit()
-        
       }
-    });
+      
+      $scope.ChangeCategory = function (c) {
+        $scope.category = c;
+      };
+      
+      (function GetCategories () {
+        $http.post("/info")
+          .success(function (result) {
+            $scope.categories = result.categories;
+          });
+      })();
+      
+      Blog.fetch({id: id}, function (result) {
+        if (result.message) {
+          alertify.alert(result.message, function () {
+            Util.GoBack();
+          });
+        } else {
+          $scope.title = result.title;
+          
+          $scope.type = result.type || "post";
+          
+          $scope.createDate = result.date;
+          
+          if (result.accessible && result.accessible == "private") {
+            $scope.choiceAccessible = "private";
+          }
+          
+          if (result.category && result.category.length) {
+            $scope.category = result.category;
+            $scope.categoryChoice = result.category;
+          }
+          
+          $scope.oldContent = result.content;
+          
+          setTimeout(function () {
+            $scope.$apply();
+            window.LoadEditor();
+          }, 1);
+          
+          (function InsertDate () {
+            var now = new Date();
+            now.setTime(now.getTime() - now.getTimezoneOffset() * 60 * 1000);
+            $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
+          })(); // autorun
+          
+          $scope.Submit = function () {
+            if ($("textarea[name='content']").length == 0) return;
+            var content = $("textarea[name='content']").val().trim();
+            
+            var title = $scope.title.trim();
+            var date = $scope.date.trim();
+            var key = $scope.key.trim();
+            var category = $scope.category.trim();
+            
+            var accessible = $scope.choiceAccessible;
+            
+            if (title == "") {
+              return alertify.alert("title can't be empty!");
+            }
+            if (date == "") {
+              return alertify.alert("date can't be empty!");
+            }
+            if (key == "") {
+              return alertify.alert("key can't be empty!");
+            }
+            if (content == "") {
+              return alertify.alert("content can't be empty!");
+            }
+            var data = {
+              id: id,
+              title: title,
+              date: date,
+              key: key,
+              content: content,
+              category: category,
+              accessible: accessible
+            };
+      
+            Blog.save(data, function (result) {
+              if (result.success) {
+                alertify.alert("Post edit successful", Util.GoBack);
+              } else {
+                alertify.error(result.message || "System Error");
+              }
+            });
+          }; // Submit()
+          
+        }
+      });
 
-  }]);
+    }
+  ]);
 
 
 
