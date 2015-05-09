@@ -1,6 +1,6 @@
 (function () {
   "use strict";
-  
+
   //override defaults
   alertify.defaults.transition = "zoom";
   alertify.defaults.theme.ok = "ui positive button";
@@ -68,9 +68,9 @@
     $locationProvider.html5Mode(true);
   }]);
 
-  qhweb.run(["$rootScope", "$location", "$http", "$document", "$cookieStore",
-    function ($rootScope, $location, $http, $document, $cookieStore) {
-      
+  qhweb.run(["$rootScope", "$location", "$http", "$document", "$cookies",
+    function ($rootScope, $location, $http, $document, $cookies) {
+
     var keys = "";
     $document.on("keypress", function (event) {
       var k = String.fromCharCode(event.which).match(/\w/);
@@ -95,48 +95,49 @@
         }
       }
     });
-    
+
     var history = [];
-    
+
     $rootScope.GoBack = function () {
       window.history.go(-1);
     };
-    
+
     function HasKey () {
-      var key = $cookieStore.get("key");
+      var key = $cookies.get("key");
       if (typeof key == "string" && key.length) {
         return true;
       }
       return false;
     }
-    
+
     function Key () {
-      var key = $cookieStore.get("key");
+      var key = $cookies.get("key");
       if (typeof key == "string" && key.length) {
         return key;
       }
     }
-    
+
     function SetKey (key) {
-      $cookieStore.put("key", key);
+      $cookies.put("key", key);
     }
-    
+
     function ClearKey () {
-      $cookieStore.remove("key");
+      $cookies.remove("key");
     }
-    
+
     function Verify (callback) {
       alertify
         .prompt()
         .set("title", "Warning")
         .set("message", "Please input your key:")
+        .set("type", "password")
         .set("onok", function (evt, value) {
           if (typeof value == "string" && value.trim().length) {
             $http.post("/verify", {key: value})
               .success(function (result) {
                 if (result.ok) {
                   SetKey(value);
-                  alertify.success("Congratulation, your key is right!", function () {
+                  alertify.success("Congratulation, your key is right!", 5, function () {
                     if (typeof callback == "function") callback();
                   });
                   (typeof callback == "function") && callback();
@@ -148,24 +149,24 @@
         })
         .show();
     }
-    
+
     function LoginOut (callback) {
       ClearKey();
       (typeof callback == "function") && callback();
     }
-    
+
     $rootScope.HasKey = HasKey;
     $rootScope.Key = Key;
     $rootScope.SetKey = SetKey;
     $rootScope.Verify = Verify;
     $rootScope.LoginOut = LoginOut;
-    
+
   }]);
 
   qhweb.config(["$sceProvider", function ($sceProvider) {
     $sceProvider.enabled(false);
   }]);
-  
+
   qhweb.factory("Util", ["$rootScope", "$location", function ($rootScope, $location) {
     return {
       Go: function (url) {
@@ -189,7 +190,7 @@
       }
     };
   }]);
-  
+
   qhweb.factory("Blog", ["$resource", function ($resource) {
     return $resource("/blog/:method", {}, {
       list: {

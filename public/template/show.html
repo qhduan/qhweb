@@ -1,56 +1,55 @@
 <div class="ui page grid">
-  
+
   <div class="row">
     <div class="column">
       <div class="ui segment">
         <h1 class="ui dividing header">
-          <a href="#/">Home</a> /
-          
+          <a href="/">Home</a> /
+
           <div class="ui dropdown">
             {{ title }}
             <i class="dropdown icon"></i>
             <div class="menu">
-              <a ng-show="!HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="Verify()">Login</a>
-              <a ng-show="HasKey()" class="item" href="#/edit/{{ id }}">Edit</a>
-              <a ng-show="HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="Delete()">Delete</a>
-              <a ng-show="HasKey()" class="item" href="#/new">New</a>
-              <a ng-show="HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="LoginOut()">Sign out</a>
+              <a ng-show="!HasKey()" class="item" href="" onclick="event.preventDefault()" ng-click="Verify()">Login</a>
+              <a ng-show="HasKey()" class="item" href="/edit/{{ id }}">Edit</a>
+              <a ng-show="HasKey()" class="item" href="" onclick="event.preventDefault()" ng-click="Delete()">Delete</a>
+              <a ng-show="HasKey()" class="item" href="/new">New</a>
+              <a ng-show="HasKey()" class="item" href="" onclick="event.preventDefault()" ng-click="LoginOut()">Sign out</a>
               <a ng-show="false" ng-init="dropdown()"></a>
             </div>
           </div>
-          
-          
+
+
         </h1>
-        
+
         <div ng-show="message && message.length" class="text-center">
           <h3>{{ message }}</h3>
         </div>
         <div id="content" class="editor-content" style="font-size: 1.2em;">
           <textarea ng-bind="fetchContent" style="display: none;"></textarea>
         </div>
-        
+
         <div class="ui divider"></div>
-        
-        
-        
+
+
+
         <div ng-show="next" style="float: right;"><a href="#/show/{{ next.id }}">后一篇《{{ next.title }}》</a></div>
-        
+
         <div ng-show="prev"><a href="#/show/{{ prev.id }}">前一篇《{{ prev.title }}》</a></div>
-        
+
         <div>{{ accessible }} {{ type }}</div>
-        
+
         <div>{{ category }}</div>
-        
+
         <div>{{ createDate }} {{ editDate }}</div>
-        
+
       </div>
     </div>
   </div>
-  
+
   <div class="row">
     <div class="column">
     </div>
   </div>
-  
-</div>
 
+</div>

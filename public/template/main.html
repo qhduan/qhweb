@@ -5,51 +5,51 @@
   <div class="row">
     <div class="column">
       <div class="ui segment">
-        
+
         <h1 class="ui header">
-          <a ng-href="#/">
+          <a href="/">
             {{ title }}
           </a>
         </h1>
-        
+
         <div class="ui right floated header">
           <div class="ui dropdown">
             {{ (subtitle && subtitle.length) ? subtitle : "" }}
             <i class="dropdown icon"></i>
             <div class="menu">
-              <a ng-show="!HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="Verify(GetPosts)">Login</a>
-              <a ng-show="HasKey()" class="item" href="#/new">New</a>
-              <a ng-show="HasKey()" class="item" href="#/config">Config</a>
-              <a ng-show="HasKey()" class="item" href="#/password">Passwd</a>
-              <a ng-show="HasKey()" class="item" href="#" onclick="event.preventDefault()" ng-click="LoginOut(GetPosts)">Sign out</a>
+              <a ng-show="!HasKey()" class="item" href="" onclick="event.preventDefault()" ng-click="Verify(GetPosts)">Login</a>
+              <a ng-show="HasKey()" class="item" href="/new">New</a>
+              <a ng-show="HasKey()" class="item" href="/config">Config</a>
+              <a ng-show="HasKey()" class="item" href="/password">Passwd</a>
+              <a ng-show="HasKey()" class="item" href="" onclick="event.preventDefault()" ng-click="LoginOut(GetPosts)">Sign out</a>
               <a ng-show="false" ng-init="dropdown()"></a>
             </div>
           </div>
         </div>
-        
+
       </div>
     </div>
   </div>
-  
+
   <div class="row">
-    
+
     <div class="eleven wide column">
-      
+
       <div ng-if="search" class="ui segment">
         Search <mark>{{ search }}</mark> result(s):
       </div>
-      
+
       <div ng-if="archive" class="ui segment">
         Archive <mark>{{ archive }}</mark> result(s):
       </div>
-      
+
       <div ng-if="category" class="ui segment">
         Category <mark>{{ category }}</mark> result(s):
       </div>
-      
+
       <div ng-repeat="post in posts" class="ui {{ $first?'top':'' }}{{ $last?'bottom':'' }} attached segment">
         <p>
-          <a href="#/show/{{ post.id }}">
+          <a href="/show/{{ post.id }}">
             <span ng-if="post.category && post.category.length">
               [{{ post.category }}]
             </span>
@@ -60,52 +60,52 @@
           </a>
         </p>
       </div>
-      
+
       <div class="ui pagination menu right floated">
         <a ng-href="{{ param(1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
           <i class="angle double left icon"></i>
         </a>
-        
+
         <a ng-href="{{ param(page - 1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
           <i class="angle left icon"></i>
         </a>
-        
+
         <a ng-repeat="num in range(3, page)" ng-href="{{ param(num) }}" class="{{ page==num?'active':'' }} item {{ ((num>=1)&&(num<=maxPage))?'':'disabled' }}">
           {{ ((num>=1)&&(num<=maxPage)) ? num : '' }}
         </a>
-        
+
         <a ng-href="{{ param(page + 1) }}" class="icon item {{ (page+1)>maxPage?'disabled':'' }}">
           <i class="angle right icon"></i>
         </a>
-        
+
         <a ng-href="{{ param(maxPage) }}" class="icon item {{ page>=maxPage?'disabled':'' }}">
           <i class="angle double right icon"></i>
         </a>
       </div>
-        
+
     </div><!-- left -->
-    
+
     <div class="five wide column">
-      
+
       <div ng-repeat="article in articles" class="ui {{ $first?'top':'' }}{{ $last?'bottom':'' }} attached segment">
-        <a href="#/show/{{ article.id }}">
+        <a href="/show/{{ article.id }}">
           {{ article.title }}
         </a>
       </div>
-      
+
       <div class="ui segment">
         <ul class="ui list">
           <li ng-repeat="it in categories">
-            <a style="{{ it.name == category ? 'color: red;' : ''}}" href="#/category/{{ it.name }}">
+            <a style="{{ it.name == category ? 'color: red;' : ''}}" href="/category/{{ it.name }}">
               {{ it.name }}({{ it.value }})
             </a>
           </li>
         </ul>
       </div>
-        
-      
+
+
       <div class="ui segment">
-        
+
         <div >
           <select class="ui dropdown fluid" ng-model="archiveSelected" ng-change="GoArchive(archiveSelected)">
             <option value="">Archive</option>
@@ -114,9 +114,9 @@
             </option>
           </select>
         </div>
-        
+
         <div class="ui horizontal divider"></div>
-        
+
         <form ng-submit="Search(search)">
           <div class="ui search">
             <div class="ui icon input">
@@ -128,11 +128,11 @@
             </div>
           </div>
         </form>
-        
+
       </div>
-      
+
     </div><!-- right -->
-    
+
   </div>
 
 
