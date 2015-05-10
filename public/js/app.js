@@ -78,20 +78,16 @@
         k = k[0].toLowerCase();
         keys += k;
         if (keys.match(/new$/)) {
-          keys = "";
-          window.location.href = "#/new";
+          $location.url("/new");
         }
         if (keys.match(/config$/)) {
-          keys = "";
-          window.location.href = "#/config";
+          $location.url("/config");
         }
         if (keys.match(/password$/)) {
-          keys = "";
-          window.location.href = "#/password";
+          $location.url("/password");
         }
         if (keys.match(/main$/)) {
-          keys = "";
-          window.location.href = "#/";
+          $location.url("/");
         }
       }
     });
@@ -126,28 +122,27 @@
     }
 
     function Verify (callback) {
-      alertify
-        .prompt()
-        .set("title", "Warning")
-        .set("message", "Please input your key:")
-        .set("type", "password")
-        .set("onok", function (evt, value) {
-          if (typeof value == "string" && value.trim().length) {
-            $http.post("/verify", {key: value})
-              .success(function (result) {
-                if (result.ok) {
-                  SetKey(value);
-                  alertify.success("Congratulation, your key is right!", 5, function () {
-                    if (typeof callback == "function") callback();
-                  });
-                  (typeof callback == "function") && callback();
-                } else {
-                  alertify.error(result.message || "System Error");
-                }
-              });
-          }
-        })
-        .show();
+      alertify.prompt()
+      .set("title", "Warning")
+      .set("message", "Please input your key:")
+      .set("type", "password")
+      .set("onok", function (evt, value) {
+        if (typeof value == "string" && value.trim().length) {
+          $http.post("/verify", {key: value})
+            .success(function (result) {
+              if (result.ok) {
+                SetKey(value);
+                alertify.success("Congratulation, your key is right!", 5, function () {
+                  if (typeof callback == "function") callback();
+                });
+                (typeof callback == "function") && callback();
+              } else {
+                alertify.error(result.message || "System Error");
+              }
+            });
+        }
+      })
+      .show();
     }
 
     function LoginOut (callback) {
