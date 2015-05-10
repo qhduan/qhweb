@@ -66,9 +66,11 @@
         NeedLoaded[url] = 1;
       }
       if (NeedLoading.hasOwnProperty(url)) {
-        NeedLoading[url].forEach(function (cb) {
-          (typeof cb == "function") && cb(url);
-        });
+        while (NeedLoading[url] && NeedLoading[url].length) {
+          var lastcb = NeedLoading[url][NeedLoading[url].length - 1];
+          NeedLoading[url].pop();
+          (typeof lastcb == "function") && lastcb(url);
+        }
         delete NeedLoading[url];
       }
       if (count >= list.length) {
@@ -219,6 +221,7 @@
     var v = $("#wmd-preview");
 
     if (c.length <= 0 || v.length <= 0) return;
+
     var ch = c[0].scrollTop;
     (ch < 0) && (ch = 0);
 
@@ -945,7 +948,7 @@
       $(btn_id_1).on("click", function (e) {
         e.preventDefault();
         btn_id_2.click();
-        RefreshPreview();
+        RefreshPreviewDelay();
       });
     };
 
@@ -1167,7 +1170,9 @@
               }
 
               //把编辑器内容写入div
-              editorElement.innerHTML = editorElement.innerHTML + HTML;
+              if (editorElement.innerHTML.indexOf("DeditorContainer") == -1) {
+                editorElement.innerHTML = editorElement.innerHTML + HTML;
+              }
 
               // 如果编辑器的对象中有data-submitname属性，则获取，例如<div id="editor" data-submitname="topic"></div>
               if (editorElement.attributes["data-submitname"]) {

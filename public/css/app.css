@@ -1,11 +1,4 @@
 
-
-.view-animate-container {
-}
-
-.view-animate {
-}
-
 .view-animate.ng-enter {
   transition:0.25s linear all;
   transition-delay: 0.25s;

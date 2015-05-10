@@ -2,6 +2,9 @@
 
 <div class="ui page grid">
 
+  <div class="row" style="padding-top: 15px;">
+  </div>
+
   <div class="row">
     <div class="column">
       <div class="ui segment">
@@ -35,8 +38,9 @@
 
     <div class="eleven wide column">
 
-      <div ng-if="search" class="ui segment">
-        Search <mark>{{ search }}</mark> result(s):
+      <div ng-if="searchMode" class="ui segment">
+        <strong>Search <mark>{{ searchParam }}</mark> result(s):</strong>
+        <a href="/" class="ui mini button right floated">Return</a>
       </div>
 
       <div ng-if="archive" class="ui segment">
@@ -61,24 +65,24 @@
         </p>
       </div>
 
-      <div class="ui pagination menu right floated">
-        <a ng-href="{{ param(1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
+      <div ng-if="page && maxPage" class="ui pagination menu right floated">
+        <a href="{{ Param(1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
           <i class="angle double left icon"></i>
         </a>
 
-        <a ng-href="{{ param(page - 1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
+        <a href="{{ Param(page - 1) }}" class="icon item {{ (page-1)<1?'disabled':'' }}">
           <i class="angle left icon"></i>
         </a>
 
-        <a ng-repeat="num in range(3, page)" ng-href="{{ param(num) }}" class="{{ page==num?'active':'' }} item {{ ((num>=1)&&(num<=maxPage))?'':'disabled' }}">
+        <a ng-repeat="num in Range(3, page)" href="{{ Param(num) }}" class="{{ page==num?'active':'' }} item {{ ((num>=1)&&(num<=maxPage))?'':'disabled' }}">
           {{ ((num>=1)&&(num<=maxPage)) ? num : '' }}
         </a>
 
-        <a ng-href="{{ param(page + 1) }}" class="icon item {{ (page+1)>maxPage?'disabled':'' }}">
+        <a href="{{ Param(page + 1) }}" class="icon item {{ (page+1)>maxPage?'disabled':'' }}">
           <i class="angle right icon"></i>
         </a>
 
-        <a ng-href="{{ param(maxPage) }}" class="icon item {{ page>=maxPage?'disabled':'' }}">
+        <a href="{{ Param(maxPage) }}" class="icon item {{ page>=maxPage?'disabled':'' }}">
           <i class="angle double right icon"></i>
         </a>
       </div>
@@ -87,13 +91,13 @@
 
     <div class="five wide column">
 
-      <div ng-repeat="article in articles" class="ui {{ $first?'top':'' }}{{ $last?'bottom':'' }} attached segment">
+      <div ng-if="articles && articles.length" ng-repeat="article in articles" class="ui {{ $first?'top':'' }}{{ $last?'bottom':'' }} attached segment">
         <a href="/show/{{ article.id }}">
           {{ article.title }}
         </a>
       </div>
 
-      <div class="ui segment">
+      <div ng-if="categories && categories.length" class="ui segment">
         <ul class="ui list">
           <li ng-repeat="it in categories">
             <a style="{{ it.name == category ? 'color: red;' : ''}}" href="/category/{{ it.name }}">
@@ -117,16 +121,11 @@
 
         <div class="ui horizontal divider"></div>
 
-        <form ng-submit="Search(search)">
-          <div class="ui search">
-            <div class="ui icon input">
-              <div class="ui left icon action input">
-                <i class="search icon"></i>
-                <input ng-model="search" placeholder="...keywords" type="text">
-                <div ng-click="Search(search)" class="ui submit button">Search</div>
-              </div>
-            </div>
-          </div>
+        <form class="ui action input fluid">
+          <input ng-model="searchText" placeholder="...keywords" type="text">
+          <button ng-click="Search()" class="ui icon button" type="button">
+            <i class="search icon"></i>
+          </button>
         </form>
 
       </div>

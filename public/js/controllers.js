@@ -27,12 +27,15 @@
     $scope.maxPage = 1;
     $scope.info = "";
     $scope.posts = [];
-    $scope.search = "";
+    $scope.searchText = "";
+    $scope.searchParam = "";
+    $scope.searchMode = false;
     $scope.message = "Loading...";
     $scope.archiveSelected = "Archive";
 
-    $scope.Search = function (s) {
-      if (s.trim().length) {
+    $scope.Search = function () {
+      var s = $scope.searchText;
+      if (typeof s == "string" && s.trim().length) {
         Util.Go("/search/" + encodeURIComponent(s));
       } else {
         Util.Go("/");
@@ -47,7 +50,7 @@
       }
     };
 
-    $scope.range = function (n, page) {
+    $scope.Range = function (n, page) {
       var r = [];
       for (var i = (page-n); i <= (page+n); i++) {
         r.push(i);
@@ -55,11 +58,7 @@
       return r;
     };
 
-    $scope.dropdown = function () {
-      $('.dropdown').dropdown({ transition: 'drop' });
-    };
-
-    $scope.param = function (page) {
+    $scope.Param = function (page) {
       var p = [];
 
       if ($scope.category && $scope.category.length) {
@@ -72,9 +71,9 @@
         p.push($scope.archive);
       }
 
-      if ($scope.search && $scope.search.length) {
+      if ($scope.searchParam && $scope.searchParam.length) {
         p.push("search");
-        p.push(encodeURIComponent($scope.search));
+        p.push(encodeURIComponent($scope.searchParam));
       }
 
       if (page > 1 && page <= $scope.maxPage) {
@@ -82,12 +81,12 @@
       }
 
       if (p.length == 0 && page == 1) {
-        return "#/";
+        return "/";
       }
 
       if (p.length <= 0) return "";
 
-      return "/#/" + p.join("/");
+      return "/" + p.join("/");
     };
 
     if (qhwebConfig) {
@@ -132,9 +131,10 @@
       }
 
       if ($routeParams.search) {
-        $scope.search = $routeParams.search;
+        $scope.searchParam = $routeParams.search;
+        $scope.searchMode = true;
       } else {
-        $scope.search = "";
+        $scope.searchParam = "";
       }
 
       var obj = {
@@ -145,7 +145,7 @@
 
       if ($scope.archive.length) obj.archive = $scope.archive;
 
-      if ($scope.search.length) obj.search = $scope.search;
+      if ($scope.searchParam.length) obj.search = $scope.searchParam;
 
       if (Util.HasKey()) obj.key = Util.Key();
 
@@ -404,6 +404,8 @@
           if (result.accessible && result.accessible == "private") {
             $scope.choiceAccessible = "private";
           }
+
+          console.log($scope.choiceAccessible);
 
           if (result.category && result.category.length) {
             $scope.category = result.category;
