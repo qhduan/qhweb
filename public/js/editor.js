@@ -13,10 +13,7 @@
   // 例如<div id="editor"><textarea>abc123</textarea></div>则"abc123"为默认值
 
   var Config = {
-    editor: 0, // 指示页面是否有editor，有则自动设置为1
-    content: 0, // 指示页面是否有需要转换的editor-content，有则自动设置为数量
-    init: false,
-    submit: "content", // 用来控制textarea的名字，需要表单提交时使用，默认为content
+    submit: "content", // 用来控制textarea的名字(form's submit-name)，需要表单提交时使用，默认为content
     saveLocalStorage: true,
     value: null, // 如果<div id="editor"><textarea>ABC</textarea></div> 那么ABC会写入这里
     converter: null, // 如果markdown converter初始化后，这里是一个对象，可以Config.converter.makeHtml(text)
@@ -28,7 +25,6 @@
   // Need函数是用来导入其他css和js的，作用类似于head.js或者require.js
   // list是一个array数组或者string文件名，保存css或者js
   // callback是一个在所有文件加载后的回调函数，可以为空
-
   var NeedLoaded = {}; // 已经加载了的文件列表
   var NeedLoading = {}; // 正在加载了的文件列表
   function Need (list, callback) {
@@ -111,7 +107,8 @@
     });
   }
 
-  function Ready (func) { // 这个函数用来延迟运行func函数，类似$(document).ready 或者 doucment.onready
+  // 这个函数用来延迟运行func函数，类似$(document).ready 或者 doucment.onready
+  function Ready (func) {
     if (typeof func != "function") return;
 
     if (document.readyState == "complete") {
@@ -143,7 +140,7 @@
   }
 
 
-
+  // 返回一个localStorage中的关于editor的对象
   function ReadStorage () {
     if (typeof window.localStorage == "undefined") {
       return false;
@@ -204,6 +201,11 @@
     }
   }
 
+  // 让别的应用可以调用ClearCache函数
+  window.EditorClearCache = ClearCache;
+
+
+  // 下面开始的代码，尝试输入栏和预览栏同步
   var stopScrollInput = false;
   var stopScrollPreview = false;
 
@@ -424,20 +426,6 @@
       "</div><!-- /.modal -->";
 
 
-  function AlertOpen (content, btn) {
-    if (btn) {
-      $("#EditorAlertModalClose").show();
-    } else {
-      $("#EditorAlertModalClose").hide();
-    }
-    $("#EditorAlertModalContent").html(content);
-    $("#EditorAlertModal").show();
-  }
-
-  function AlertClose () {
-    $("#EditorAlertModal").hide();
-  }
-
 
   // 设置高度函数
   function SetHeight (height) {
@@ -504,6 +492,7 @@
     $("body").css("overflow-y", "auto");
   }
 
+  // Qiniu's upload plugin, needs qiniu sdk: qiniu.js
   function QiniuUpload () {
     if (typeof Qiniu != "undefined" && document.getElementById("EditorUpload") != null) {
 
@@ -630,20 +619,16 @@
       this.innerHTML = h;
     });
 
-    // 更新所有img，为了限制宽度和点击打开，可选magnificPopup插件
+    // 更新所有img，为了限制宽度和点击打开
     div.find("img").each(function () {
       var img = $(this);
       img.css("max-width", "80%");
+      img.css("max-height", "600px");
       img.attr("href", img.attr("src"));
-
-      if (div.magnificPopup) {
-        $(this).magnificPopup({
-          type:'image'
-        });
-      }
+      img.attr("target", "_blank");
     });
 
-    // 执行highlight.js，针对pre而不是code，因为针对code的话会有一个奇怪的样式问题
+    // 执行highlight.js
     if (typeof hljs != "undefined") {
       div.find("code").each(function(i, block) {
         hljs.highlightBlock(block);
@@ -661,13 +646,13 @@
       var t = $(this);
       var id = t.data("id");
 
-      if (window.editorMathCache && window.editorMathCache[id]) {
-        $(this).html(window.editorMathCache[id]);
+      if (window.EditorMathCache && window.EditorMathCache[id]) {
+        $(this).html(window.EditorMathCache[id]);
       } else {
         // 其实这个调用只是一种队列，类似于MathJax.Hub.Typeset(this, function () {...});
         MathJax.Hub.Queue(["Typeset", MathJax.Hub, this, function () {
-          if (!window.editorMathCache) window.editorMathCache = {};
-          window.editorMathCache[id] = t.html();
+          if (!window.EditorMathCache) window.EditorMathCache = {};
+          window.EditorMathCache[id] = t.html();
         }]);
       }
     });
@@ -675,6 +660,7 @@
 
   }
 
+  // 初始化markdown转换器，必要
   function InitConverter () {
     if (!Config.converter) {
       if (typeof Markdown != "undefined" && Markdown.Converter) {
@@ -706,124 +692,43 @@
 
 
   // 将帖子内的内容进行转换
-  function ShowPost () {
-    InitConverter();
+  function ContentInit () {
 
     var topics = $('.editor-content');
-    if (!topics.length) return;
+    if (topics.length <= 0) return;
 
     topics.each(function () {
       var topic = $(this);
       var textarea = topic.find('textarea');
       if (!textarea.length) return;
 
-      topic.find(".editor-content-cache").each(function () {
+      var cache = topic.find(".editor-content-cache");
+
+      if (cache.length && cache.html().length > 0) {
+        return;
+      }
+
+      cache.each(function () {
         topic[0].removeChild(this);
       });
 
       var content = textarea.val();
 
+      if (content.length <= 0) return;
+
       content = Config.converter.makeHtml(content);
 
       var div = document.createElement("div");
-      div.innerHTML = content;
-
-      $(div).addClass("editor-content-cache");
-
-      topic.append($(div));
-
-      ComposeElement($(div));
+      div = $(div);
+      div.html(content);
+      div.addClass("editor-content-cache");
+      topic.append(div);
+      ComposeElement(div);
     });
 
     $(window).trigger("resize");//Force masonry plugins recalculate size of elements
   }
 
-
-  window.InsertUserPrefer = function (u) {
-    $("#wmd-input").val($("#wmd-input").val() + u);
-    $('#wmd-input').popover('hide');
-    pagedownEditor.refreshPreview();
-    $("#wmd-input").focus();
-  }
-
-  function ShowUserPrefer (result, username) {
-    var c = (function (a) {
-      var r = "";
-      for (var i = 0; i < a.length; i++) {
-        var u = a[i];
-        u = u.substr(username.length); // 减去已经输入的用户名的长度，得到需要补充的用户名后半部分u
-        u += " ";
-
-        r += "<a style='padding: 5px;' href='#' onclick=\"InsertUserPrefer('" + u + "');event.preventDefault();\">" + a[i] + "<a>";
-
-        if (i != (a.length-1))
-          r += "<br>";
-      }
-      return r;
-    }) (result)
-
-    $("#wmd-input").attr("data-content", "hello");
-    $(".popover").attr("z-index", 999999);
-    $("#wmd-input").popover("show");
-    $(".popover-content").html(c);
-
-    var in_pos = $("#wmd-input").offset();
-    var pre_pos = $("#wmd-preview").offset();
-
-    if (in_pos.left == pre_pos.left) {
-      $(".popover").css("top", in_pos.top);
-    } else {
-      $(".popover").css("top", 0);
-    }
-
-    $(".popover").css("left", pre_pos.left - 15);
-  }
-
-  function UserPrefer (e) {
-    if (!$) return;
-    var textarea = document.getElementById("wmd-input");
-    if (!textarea || !$(textarea).popover) return;
-    if (!textarea.selectionStart) return;
-    if (Config.StopUsernamePrefer) return;
-
-    if (!Config.usernamePreferInit) {
-      $("#wmd-input").popover({
-        title: "",
-        content: "",
-        placement: function (dom) {
-          $(dom).css("position", "absolute");
-        },
-        trigger: "manual",
-        html: true
-      });
-      Config.usernamePreferInit = true;
-    }
-
-    var pos = textarea.selectionStart;
-
-    var str = textarea.value.substring(Math.max(0, pos - 51), pos);
-
-    var m = str.match(/@([\w\-\u2E80-\u9FFF]{1,50})$/);
-    if (m) {
-      var username = m[1];
-
-      if (Config.usernamePreferCache && Config.usernamePreferCache[username]) {
-        ShowUserPrefer(Config.usernamePreferCache[username], username);
-      } else {
-        $.ajax({url: "/user/matchUsername?username=" + encodeURIComponent(username), success: function(data) {
-          if (data.success && data.success.length) {
-            if (!Config.usernamePreferCache) Config.usernamePreferCache = {};
-            Config.usernamePreferCache[username] = data.success;
-            ShowUserPrefer(data.success, username);
-          } else {
-            $("#wmd-input").popover("hide");
-          }
-        }, dataType: "json", cache: false});
-      }
-    } else {
-      $("#wmd-input").popover("hide");
-    }
-  }
 
   function DeditorPreviewEnable () {
     var checkbox = $("#DeditorPreviewEnable");
@@ -869,20 +774,40 @@
   // 编辑器初始化函数，不着急运行在最下面的Need函数里调用
   // 这个函数运行时已经document.ready，也应该初始好了jquery
   function EditorInit() {
-    if (!$) {
-      console.log("jQuery not found, editor can't init");
-      return;
+    // 如果有editor的默认值，则设置默认值
+    var editorElement = $("#editor");
+
+    if (editorElement.length <= 0) return;
+
+    editorElement = editorElement[0];
+
+    // 如果这个editor已经初始化过，则不用再次初始化
+    if (editorElement.getAttribute("data-editorinit")) return;
+
+    // 读取默认值
+    var hasTextareaDefault = false;
+    for (var i = 0; i < editorElement.children.length; i++) {
+      if (editorElement.children[i].tagName == "TEXTAREA") {
+        Config.value = editorElement.children[i].value;
+        hasTextareaDefault = true;
+        break;
+      }
+    }
+    if (hasTextareaDefault && Config.value == "") return;
+
+    //把编辑器内容写入div
+    if (editorElement.innerHTML.indexOf("DeditorContainer") == -1) {
+      editorElement.innerHTML = editorElement.innerHTML + HTML;
     }
 
-    /*
-    if (Config.init == true) {
-      InsertContent();
-      return;
+    // 如果编辑器的对象中有data-submitname属性，则获取
+    // 例如<div id="editor" data-submitname="topic"></div>
+    if (editorElement.getAttribute("data-submitname")) {
+      Config.submit = editorElement.getAttribute("data-submitname").value;
     }
-    Config.init = true;
-    */
-
-    ShowPost();
+    // 设置submit name
+    document.getElementById("wmd-input").attributes["name"].value = Config.submit;
+    editorElement.setAttribute("data-editorinit", true);
 
     var options = {
       strings: {
@@ -908,17 +833,6 @@
     pagedownEditor.run();
 
     InsertContent();
-
-    // 在提交时清除editor缓存
-    $("form").each(function () {
-      var t = $(this);
-      if (t.find("#editor").length) {
-        t.on("submit", function () {
-          ClearCache();
-        });
-      }
-    });
-
 
     function RefreshPreview() {
       pagedownEditor.refreshPreview();
@@ -1006,13 +920,11 @@
 
     $("#DeditorHelp").on("click", function (e) {
       e.preventDefault();
-      //Alert(helpHTML);
       $("#EditorHelpModal").show();
     });
 
     $("#EditorHelpModalClose").on("click", function (e) {
       e.preventDefault();
-
       $("#EditorHelpModal").hide();
     });
 
@@ -1061,8 +973,6 @@
       }
     });
 
-    $("#wmd-input").on('keyup', UserPrefer);
-    $("#wmd-input").on('mousedown', UserPrefer);
     QiniuUpload ();
 
     var save2cache = function () {
@@ -1084,7 +994,6 @@
     $("#wmd-input").on("keydown", RefreshPreviewDelay);
 
     window.EditorRefresh = RefreshPreviewDelay;
-
 
     $("#DeditorPreviewEnable").on("click", function () {
       DeditorPreviewEnable();
@@ -1132,66 +1041,23 @@
       };
     }
 
-    Config.editor = $("#editor").length;
-    Config.content = $(".editor-content").length;
-
-    if (!Config.editor && !Config.content) {
-
-      //如果页面没有editor元素也没有帖子元素，就走
-      if (document.readyState != "complete") {
-        Ready(LoadEditor); // 双重保险，避免editor的script载入在body载入之前
-        return;
-      }
-
-    } else {
-
-      // 如果页面没有editor，但是有帖子元素，就显示
-      // 为了帖子获取所需的文件
-      Need([
-        "http://cdn.staticfile.org/mathjax/2.4.0/MathJax.js?config=TeX-AMS_HTML",
-        "http://cdn.staticfile.org/highlight.js/8.2/styles/monokai_sublime.min.css",
-        "http://cdn.staticfile.org/font-awesome/4.1.0/css/font-awesome.min.css",
-        "/editor/markdown.min.js"
-        ], function () {
-          Ready(function () {
-            // 不等jquery，直接读取所需文件，但是等document.ready == complete之后才开始转化
-
-            if (Config.editor) {
-              // 如果有editor的默认值，则设置默认值
-              var editorElement = $("#editor")[0];
-
-              // 读取默认值
-              for (var i = 0; i < editorElement.children.length; i++) {
-                if (editorElement.children[i].tagName == "TEXTAREA") {
-                  Config.value = editorElement.children[i].value;
-                  editorElement.removeChild(editorElement.children[i]);
-                  break;
-                }
-              }
-
-              //把编辑器内容写入div
-              if (editorElement.innerHTML.indexOf("DeditorContainer") == -1) {
-                editorElement.innerHTML = editorElement.innerHTML + HTML;
-              }
-
-              // 如果编辑器的对象中有data-submitname属性，则获取，例如<div id="editor" data-submitname="topic"></div>
-              if (editorElement.attributes["data-submitname"]) {
-                Config.submit = editorElement.attributes["data-submit"].value;
-              }
-              // 设置submit name
-              document.getElementById("wmd-input").attributes["name"].value = Config.submit;
-
-              EditorInit();
-              console.log("Editor & content init");
-            } else {
-              ShowPost();
-              console.log("Editor content only init");
-            }
-
-          });
-      });
-
-    }
+    // 如果页面没有editor，但是有帖子元素，就显示
+    // 为了帖子获取所需的文件
+    Need([
+      "http://cdn.staticfile.org/mathjax/2.4.0/MathJax.js?config=TeX-AMS_HTML",
+      "http://cdn.staticfile.org/highlight.js/8.2/styles/monokai_sublime.min.css",
+      "http://cdn.staticfile.org/font-awesome/4.1.0/css/font-awesome.min.css",
+      "/editor/markdown.js"
+      ], function () {
+        Ready(function () {
+          InitConverter();
+          // 不等jquery，直接读取所需文件，但是等document.ready == complete之后才开始转化
+          setInterval(function () {
+            EditorInit();
+            ContentInit();
+          }, 50);
+        });
+    });
 
   }
 

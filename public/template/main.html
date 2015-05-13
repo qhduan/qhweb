@@ -121,7 +121,7 @@
 
         <div class="ui horizontal divider"></div>
 
-        <form class="ui action input fluid">
+        <form ng-submit="Search()" class="ui action input fluid">
           <input ng-model="searchText" placeholder="...keywords" type="text">
           <button ng-click="Search()" class="ui icon button" type="button">
             <i class="search icon"></i>
