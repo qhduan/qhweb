@@ -6,7 +6,7 @@
   alertify.defaults.theme.ok = "ui positive button";
   alertify.defaults.theme.cancel = "ui black button";
 
-  var qhweb = angular.module("qhweb", ["ngRoute", "ngResource", "ngAnimate", "ngCookies", "qhwebControllers"]);
+  var qhweb = angular.module("qhweb", ["ngRoute", "ngResource", "ngCookies", "qhwebControllers"]);
 
   qhweb.config(["$routeProvider", "$locationProvider", function ($routeProvider, $locationProvider) {
     $routeProvider.
