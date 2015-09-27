@@ -1,23 +1,16 @@
 (function () {
   "use strict";
 
-  function dododo () {
-    
-    var clientEncrypt = new JSEncrypt({ default_key_size: 512 });
+  function dddd () {
 
-    var clientPublic = clientEncrypt.getPublicKeyB64();
-    var clientPrivate = clientEncrypt.getPrivateKeyB64();
+    var serverEncrypt = new NodeRSA({ b: 512 }, "pkcs1-private-pem", { encryptionScheme: "pkcs1", environment: "browser" });
 
-    function ConvertPrivateKey (key) {
-      var ret = [];
-      ret.push("-----BEGIN RSA PRIVATE KEY-----");
-      while (key.length) {
-        ret.push(key.substr(0, 64));
-        key = key.substr(64);
-      }
-      ret.push("-----END RSA PRIVATE KEY-----");
-      return ret.join("\n");
-    }
+    var serverPublic = serverEncrypt.exportKey("public");
+    var serverPrivate = serverEncrypt.exportKey("private");
+    // cut off
+    serverPublic = serverPublic.replace("-----BEGIN PUBLIC KEY-----", "");
+    serverPublic = serverPublic.replace("-----END PUBLIC KEY-----", "");
+    serverPublic = serverPublic.replace(/\r?\n|\r/g, "");
 
     function ConvertPublicKey (key) {
       var ret = [];
@@ -33,29 +26,50 @@
     var publicKeyCache = {};
 
     function Encrypt (data, publicKey) {
-      if (!publicKeyCache[publicKey]) {
-        publicKeyCache[publicKey] = new JSEncrypt({ default_key_size: 512 });
-        publicKeyCache[publicKey].setPublicKey(publicKey);
+      if (Object.keys(publicKeyCache).length > 20) {
+        publicKeyCache = {};
       }
+      if (!publicKeyCache[publicKey]) {
+        publicKeyCache[publicKey] = new NodeRSA({ b: 512 }, "pkcs1-private-pem", { encryptionScheme: "pkcs1", environment: "browser" });
+        publicKeyCache[publicKey].importKey(ConvertPublicKey(publicKey), "public");
+      }
+      //data = Base64Encode(data);
       var dataArray = [];
       while (data.length) {
-        dataArray.push(data.substr(0, 48));
-        data = data.substr(48);
+        dataArray.push(data.substr(0, 32));
+        data = data.substr(32);
       }
       var ret = dataArray.map(function (element) {
-        return publicKeyCache[publicKey].encrypt(element);
+        return publicKeyCache[publicKey].encrypt(element, "base64");
       });
       return ret;
     }
 
-    function Decrypt (data) {
-      return clientEncrypt.decrypt(data);
+    function Decrypt (dataArray) {
+      try {
+        var data = dataArray.map(function (element) {
+          return serverEncrypt.decrypt(element);
+        });
+      } catch (e) {
+        console.error("decrypt fail", e);
+        return null;
+      }
+      try {
+        data = data.join("");
+        //data = Base64Decode(data);
+        data = JSON.parse(data);
+        return data;
+      } catch (e) {
+        console.log("json parse failed", data, e);
+        return null;
+      }
     }
 
+    // console.log(Encrypt(JSON.stringify({"hello":"world"}), PUBLIC_KEY));
     return {
+      publicKey: serverPublic,
       encrypt: Encrypt,
-      decrypt: Decrypt,
-      publicKey: clientPublic
+      decrypt: Decrypt
     };
   }
 
@@ -133,7 +147,7 @@
 
       var Util = {};
 
-      var clientEncrypt = dododo();
+      var clientEncrypt = dddd();
       var serverPublicKey = null;
 
       // 从服务器获取RSA Public Key
@@ -142,11 +156,11 @@
           if (typeof serverPublicKey == "string" && serverPublicKey.length) {
             resolve(serverPublicKey);
           } else {
-            $http.get("/publicKey").then(function (response) {
+            $http.get("/publicKey?" + Math.random().toString().substr(2)).then(function (response) {
               var data = response.data;
               if (data && data.publicKey) {
                 serverPublicKey = data.publicKey;
-                resolve(serverPublicKey);
+                resolve(data.publicKey);
               } else {
                 throw new Error("Invalid server public key");
               }
@@ -174,19 +188,7 @@
                   // some error happend
                   alertify.error(response.data.message);
                 } else if (response.data.content && response.data.content.length) {
-                  var data = [];
-                  response.data.content.forEach(function (element, index, array) {
-                    var t = clientEncrypt.decrypt(element);
-                    data.push(t);
-                  });
-                  data = data.join("");
-                  try {
-                    data = JSON.parse(data);
-                  } catch (e) {
-                    console.error("JSON.parse failed");
-                    console.error(data);
-                    data = null;
-                  }
+                  var data = clientEncrypt.decrypt(response.data.content);
                   if (data) {
                     resolve(data);
                   } else {

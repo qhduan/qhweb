@@ -649,11 +649,24 @@
       if (window.EditorMathCache && window.EditorMathCache[id]) {
         $(this).html(window.EditorMathCache[id]);
       } else {
-        // 其实这个调用只是一种队列，类似于MathJax.Hub.Typeset(this, function () {...});
-        MathJax.Hub.Queue(["Typeset", MathJax.Hub, this, function () {
-          if (!window.EditorMathCache) window.EditorMathCache = {};
-          window.EditorMathCache[id] = t.html();
-        }]);
+        var content = this.innerHTML;
+        while (content[0] == "$") {
+          content = content.substr(1);
+        }
+        while (content[content.length - 1] == "$") {
+          content = content.substr(0, content.length - 1);
+        }
+        var latex = null;
+        try {
+          latex = katex.renderToString(content);
+        } catch (e) {
+          // console.error(e);
+        }
+        if (latex) {
+          this.innerHTML = latex;
+        } else {
+          this.innerHTML = "Invalid Latex";
+        }
       }
     });
 
@@ -1018,36 +1031,15 @@
   // 这个函数用来加载显示帖子的部分
   function LoadEditor () {
 
-    // 设置Mathjax, > 2.3 版本支持这么设置
-    // Mathjax类型为TeX-AMS_HTML，即tex，latex转为html
-    // AMS扩展是必须的为了一些latex语句
-    if (!window.MathJax) {
-      window.MathJax = {
-        TeX: {
-          equationNumbers: {
-            autoNumber: "none"
-          }
-        },
-        tex2jax: {
-          inlineMath: [ ['$','$'] ],
-          displayMath: [ ['$$','$$'] ],
-          processEscapes: true,
-          displayIndent: "1.5em",
-          "HTML-CSS": {
-            scale: 90
-          }
-        },
-        skipStartupTypeset: true
-      };
-    }
-
     // 如果页面没有editor，但是有帖子元素，就显示
     // 为了帖子获取所需的文件
     Need([
-      "http://cdn.staticfile.org/mathjax/2.4.0/MathJax.js?config=TeX-AMS_HTML",
-      "http://cdn.staticfile.org/highlight.js/8.2/styles/monokai_sublime.min.css",
-      "http://cdn.staticfile.org/font-awesome/4.1.0/css/font-awesome.min.css",
-      "/editor/markdown.js"
+      "editor/highlight/highlight.pack.js",
+      "editor/highlight/styles/monokai_sublime.css",
+      "editor/FontAwesome/css/font-awesome.min.css",
+      "editor/KaTeX/katex.min.css",
+      "editor/KaTeX/katex.min.js",
+      "editor/markdown.js"
       ], function () {
         Ready(function () {
           InitConverter();

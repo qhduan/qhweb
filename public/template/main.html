@@ -1,4 +1,8 @@
-
+<style>
+  p:hover {
+    background-color: #ccc;
+  }
+</style>
 
 <div class="ui page grid">
 
@@ -52,8 +56,8 @@
       </div>
 
       <div ng-repeat="post in posts" class="ui {{ $first?'top':'' }}{{ $last?'bottom':'' }} attached segment">
-        <p>
-          <a href="/show/{{ post.id }}">
+        <a href="/show/{{ post.id }}">
+          <p>
             <span ng-if="post.category && post.category.length">
               [{{ post.category }}]
             </span>
@@ -61,8 +65,8 @@
               *
             </span>{{ post.title }}
             <span class="" style="float: right;">{{ post.date }}</span>
-          </a>
-        </p>
+          </p>
+        </a>
       </div>
 
       <div ng-if="page && maxPage" class="ui pagination menu right floated">

@@ -2,7 +2,17 @@
 
 var NodeRSA = require('node-rsa');
 
-var serverEncrypt = new NodeRSA({ b: 512 }, "pkcs1-private-pem", { encryptionScheme: "pkcs1" });
+function Base64Encode (d) {
+  var b = new Buffer(d, "utf8");
+  return b.toString("base64");
+}
+
+function Base64Decode (d) {
+  var b = new Buffer(d, "base64");
+  return b.toString("utf8");
+}
+
+var serverEncrypt = new NodeRSA({ b: 512 }, "pkcs1-private-pem", { encryptionScheme: "pkcs1", environment: "browser" });
 
 var serverPublic = serverEncrypt.exportKey("public");
 var serverPrivate = serverEncrypt.exportKey("private");
@@ -10,21 +20,6 @@ var serverPrivate = serverEncrypt.exportKey("private");
 serverPublic = serverPublic.replace("-----BEGIN PUBLIC KEY-----", "");
 serverPublic = serverPublic.replace("-----END PUBLIC KEY-----", "");
 serverPublic = serverPublic.replace(/\r?\n|\r/g, "");
-
-serverPrivate = serverPrivate.replace("-----BEGIN RSA PRIVATE KEY-----", "");
-serverPrivate = serverPrivate.replace("-----END RSA PRIVATE KEY-----", "");
-serverPrivate = serverPrivate.replace(/\r?\n|\r/g, "");
-
-function ConvertPrivateKey (key) {
-  var ret = [];
-  ret.push("-----BEGIN RSA PRIVATE KEY-----");
-  while (key.length) {
-    ret.push(key.substr(0, 64));
-    key = key.substr(64);
-  }
-  ret.push("-----END RSA PRIVATE KEY-----");
-  return ret.join("\n");
-}
 
 function ConvertPublicKey (key) {
   var ret = [];
@@ -40,14 +35,18 @@ function ConvertPublicKey (key) {
 var publicKeyCache = {};
 
 function Encrypt (data, publicKey) {
+  if (Object.keys(publicKeyCache).length > 20) {
+    publicKeyCache = {};
+  }
   if (!publicKeyCache[publicKey]) {
-    publicKeyCache[publicKey] = new NodeRSA({ b: 512 }, { encryptionScheme: "pkcs1" });
+    publicKeyCache[publicKey] = new NodeRSA({ b: 512 }, "pkcs1-private-pem", { encryptionScheme: "pkcs1", environment: "browser" });
     publicKeyCache[publicKey].importKey(ConvertPublicKey(publicKey), "public");
   }
+  //data = Base64Encode(data);
   var dataArray = [];
   while (data.length) {
-    dataArray.push(data.substr(0, 48));
-    data = data.substr(48);
+    dataArray.push(data.substr(0, 32));
+    data = data.substr(32);
   }
   var ret = dataArray.map(function (element) {
     return publicKeyCache[publicKey].encrypt(element, "base64");
@@ -55,23 +54,23 @@ function Encrypt (data, publicKey) {
   return ret;
 }
 
-function Decrypt (dataArray, second) {
+function Decrypt (dataArray) {
   try {
-    var data = [];
-    dataArray.forEach(function (element, index, array) {
-      var t = serverEncrypt.decrypt(element);
-      data.push(t);
+    var data = dataArray.map(function (element) {
+      return serverEncrypt.decrypt(element);
     });
+  } catch (e) {
+    console.error("decrypt fail", e);
+    return null;
+  }
+  try {
     data = data.join("");
+    //data = Base64Decode(data);
     data = JSON.parse(data);
     return data;
   } catch (e) {
-    if (!second) {
-      return Decrypt(dataArray, true);
-    } else {
-      console.error(e);
-      return null;
-    }
+    console.log("json parse failed", data, e);
+    return null;
   }
 }
 
