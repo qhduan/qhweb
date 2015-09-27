@@ -1,7 +1,7 @@
 {
   "name": "qhweb",
   "description": "A simple blog",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "author": {
     "name": "QHDuan",
     "email": "mail@qhduan.com"
@@ -13,8 +13,10 @@
     "express": "latest",
     "body-parser": "latest",
     "connect-multiparty": "latest",
-    "compression": "latest"
+    "compression": "latest",
+    "node-rsa": "latest"
   },
+  "license": "GPL-3.0",
   "engines": {
     "node": ">=0.8.0"
   },

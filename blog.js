@@ -9,28 +9,87 @@ var compression = require('compression');
 var config = require("./config");
 var tool = require("./tool");
 var post = require("./post");
+var encrypt = require("./encrypt");
 
 var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(compression());
 
-//app.get("/", function (req, res) {
-//  res.sendFile(__dirname + "/public/index.html");
-//});
+app.get("/publicKey", function (req, res) {
+  res.json({ publicKey: encrypt.publicKey });
+  res.end();
+});
 
-app.post("/info", post.GetInfoHandle);
-
-app.post("/blog/list", post.GetPageHandle);
-app.post("/blog/create", post.CreatePostHandle);
-app.post("/blog/remove", post.DeletePostHandle);
-app.post("/blog/save", post.EditPostHandle);
-app.post("/blog/fetch", post.GetContentHandle);
-
-app.post("/config", tool.SetConfigHandle);
-app.post("/verify", tool.VerifyPasswordHandle);
-app.post("/password", tool.ChagnePasswordHandle);
 app.post('/upload', multipart(), tool.UploadHandle);
+
+app.post("/blog", function (req, res) {
+  var clientData = req.body;
+
+  if (typeof clientData == "object" && clientData.content) {
+    var data = encrypt.decrypt(clientData.content);
+
+    if (!data || !clientData.clientPublicKey || !encrypt.encrypt("test", clientData.clientPublicKey)) {
+      console.error(clientData);
+      res.json({ message: "Invalid public key" });
+      return;
+    }
+
+    var callback = function (json) {
+      try {
+        var str = JSON.stringify(json);
+        res.json({ content: encrypt.encrypt(str, clientData.clientPublicKey) });
+        res.end();
+      } catch (e) {
+        console.log(data, json);
+        throw e;
+      }
+    };
+
+    if (data && data.method) {
+      switch (data.method) {
+        case "info":
+          post.GetInfoHandle(data, callback);
+          break;
+        case "list":
+          post.GetPageHandle(data, callback);
+          break;
+        case "get":
+          post.GetContentHandle(data, callback);
+          break;
+        case "create":
+          post.CreatePostHandle(data, callback);
+          break;
+        case "save":
+          post.EditPostHandle(data, callback);
+          break;
+        case "remove":
+          post.DeletePostHandle(data, callback);
+          break;
+        case "verify":
+          tool.VerifyPasswordHandle(data, callback);
+          break;
+        case "config":
+          tool.SetConfigHandle(data, callback);
+          break;
+        case "password":
+          tool.ChagnePasswordHandle(data, callback);
+          break;
+        default:
+          res.json({ message: "Invalid method" });
+          res.end();
+      }
+    } else {
+      res.json({ message: "Invalid data" });
+      res.end();
+    }
+  } else {
+    res.json({ message: "Invalid access" });
+    res.end();
+    return;
+  }
+
+});
 
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/database"));
@@ -44,4 +103,3 @@ var PORT = config.get("port");
 app.listen(PORT, function () {
   console.log("QHWeb is running on port", PORT);
 });
-

@@ -17,8 +17,8 @@
   }]);
 
   qhwebControllers.controller("mainController", [
-    "$scope", "$routeParams", "$http", "Blog", "Util",
-    function ($scope, $routeParams, $http, Blog, Util) {
+    "$scope", "$routeParams", "Util",
+    function ($scope, $routeParams, Util) {
 
     $scope.title = "title";
     $scope.subtitle = "subtitle";
@@ -36,16 +36,16 @@
     $scope.Search = function () {
       var s = $scope.searchText;
       if (typeof s == "string" && s.trim().length) {
-        Util.Go("/search/" + encodeURIComponent(s));
+        Util.go("/search/" + encodeURIComponent(s));
       } else {
-        Util.Go("/");
+        Util.go("/");
       }
     };
 
     $scope.GoArchive = function (choice) {
       if (choice.length) {
         if (choice != "Archive") {
-          Util.Go("/archive/" + encodeURIComponent(choice));
+          Util.go("/archive/" + encodeURIComponent(choice));
         }
       }
     };
@@ -93,22 +93,21 @@
       $scope.title = qhwebConfig.siteName;
       $scope.subtitle = qhwebConfig.siteSubtitle;
       $scope.url = qhwebConfig.url;
-      Util.Title(qhwebConfig.siteName);
+      Util.title(qhwebConfig.siteName);
     }
 
     function GetInfo () {
-      $http.post("/info")
-        .success(function (result) {
-          $scope.articles = result.articles;
-          $scope.categories = result.categories;
-          $scope.archives = result.archives;
+      Util.get({ method: "info" }).then(function (result) {
+        $scope.articles = result.articles;
+        $scope.categories = result.categories;
+        $scope.archives = result.archives;
 
-          qhwebConfig = result.config;
-          $scope.title = qhwebConfig.siteName;
-          $scope.subtitle = qhwebConfig.siteSubtitle;
-          $scope.url = qhwebConfig.url;
-          Util.Title(qhwebConfig.siteName);
-        });
+        qhwebConfig = result.config;
+        $scope.title = qhwebConfig.siteName;
+        $scope.subtitle = qhwebConfig.siteSubtitle;
+        $scope.url = qhwebConfig.url;
+        Util.title(qhwebConfig.siteName);
+      });
     }
 
     function GetPosts () {
@@ -138,6 +137,7 @@
       }
 
       var obj = {
+        method: "list",
         page: $scope.page
       };
 
@@ -147,9 +147,9 @@
 
       if ($scope.searchParam.length) obj.search = $scope.searchParam;
 
-      if (Util.HasKey()) obj.key = Util.Key();
+      if (Util.hasKey()) obj.key = Util.key();
 
-      Blog.list(obj, function (result) {
+      Util.get(obj).then(function (result) {
         if (result.count) {
           $scope.message = "";
         } else {
@@ -160,7 +160,7 @@
         $scope.info = "" + result.count + " posts";
 
         if ($scope.page > $scope.maxPage || $scope.page < 1) {
-          Util.GoBack();
+          Util.goBack();
         } else {
           $scope.posts = result.posts;
           $scope.mainButton = {display: ""};
@@ -169,7 +169,7 @@
             $scope.pages.push(i);
           }
         }
-      });
+      }); // Util.get
     }
 
     $scope.GetPosts = GetPosts;
@@ -182,9 +182,9 @@
 
 
   qhwebControllers.controller("newController", [
-    "$scope", "$http", "Blog", "Util",
-    function ($scope, $http, Blog, Util) {
-    Util.Title("New Post");
+    "$scope", "Util",
+    function ($scope, Util) {
+    Util.title("New Post");
     $scope.title = "";
     $scope.key = "";
     $scope.categories = [];
@@ -192,8 +192,8 @@
     $scope.choiceType = "post";
     $scope.choiceAccessible = "public";
 
-    if (Util.HasKey()) {
-      $scope.key = Util.Key();
+    if (Util.hasKey()) {
+      $scope.key = Util.key();
     }
 
     (function InsertDate () {
@@ -202,10 +202,9 @@
       $scope.date = now.toISOString().replace(/T|Z|\.\d{3}/g, " ").trim();
     })(); // autorun
 
-    $http.post("/info")
-      .success(function (result) {
-        $scope.categories = result.categories;
-      });
+    Util.get({ method: "info" }).then(function (result) {
+      $scope.categories = result.categories;
+    });
 
     $scope.ChangeCategory = function (c) {
       $scope.category = c;
@@ -239,22 +238,27 @@
         alertify.error("content can't be empty!");
         return;
       }
-      var data = {};
-      data.title = title;
-      data.date = date;
-      data.key = key;
-      data.content = content;
-      data.type = type;
+      var data = {
+        method: "create",
+        title: title,
+        date: date,
+        key: key,
+        content: content,
+        type: type
+      };
 
       if (data.type == "post") {
         data.category = category;
         data.accessible = accessible;
       }
 
-      Blog.create(data, function (result) {
+      Util.get(data).then(function (result) {
         if (result.success) {
-          alertify.success("Post create successful", 5, function () {
-            Util.GoBack();
+          alertify
+          .alert("Post create successful")
+          .set("closable", false)
+          .set("onok", function () {
+            Util.goBack();
           });
         } else {
           alertify.error(result.message || "System Error");
@@ -268,8 +272,8 @@
 
 
   qhwebControllers.controller("showController", [
-    "$scope", "$routeParams", "Blog", "Util",
-    function ($scope, $routeParams, Blog, Util) {
+    "$scope", "$routeParams", "Util",
+    function ($scope, $routeParams, Util) {
     var id = $routeParams.id;
     $scope.content = "";
     $scope.message = "Loading...";
@@ -279,19 +283,19 @@
     };
 
     if (typeof id != "string" || id.trim().length <= 0) {
-      return alertify.error("Invalid arguments", Util.GoBack);
+      return alertify.error("Invalid arguments", Util.goBack);
     }
 
     id = id.trim();
 
-    Blog.fetch({id: id}, function (result) {
+    Util.get({ id: id, method: "get" }).then(function (result) {
       if (result.message) {
         $scope.message = result.message;
         alertify.error(result.message, 5, function () {
-          Util.GoBack();
+          Util.goBack();
         });
       } else {
-        Util.Title(result.title);
+        Util.title(result.title);
         $scope.id = id;
         $scope.title = result.title;
         $scope.type = result.type;
@@ -322,18 +326,25 @@
         }, 1);
 
         $scope.Delete = function () {
-          if (!Util.HasKey()) {
+          if (!Util.hasKey()) {
             alertify.error("your're not sign in");
           } else {
             alertify.confirm("Are you sure? We will throw it to Mars and you'll never have it again!", function (evt) {
               if (evt) {
                 var data = {
+                  method: "remove",
                   id: id,
-                  key: Util.Key()
+                  key: Util.key()
                 };
-                Blog.remove(data, function (result) {
+
+                Util.get(data).then(function (result) {
                   if (result.success) {
-                    alertify.error("already deleted", Util.GoBack);
+                    alertify
+                    .alert("Post deleted successful")
+                    .set("closable", false)
+                    .set("onok", function () {
+                      Util.goBack();
+                    });
                   } else {
                     alertify.error(result.message || "System Error");
                   }
@@ -349,9 +360,9 @@
 
 
   qhwebControllers.controller("editController", [
-    "$scope", "$routeParams", "$http", "Blog", "Util",
-    function ($scope, $routeParams, $http, Blog, Util) {
-      Util.Title("Edit");
+    "$scope", "$routeParams", "Util",
+    function ($scope, $routeParams, Util) {
+      Util.title("Edit");
       $scope.title = "";
       $scope.key = "";
       $scope.categories = [];
@@ -364,8 +375,8 @@
         $scope.category = c;
       };
 
-      if (Util.HasKey()) {
-        $scope.key = Util.Key();
+      if (Util.hasKey()) {
+        $scope.key = Util.key();
       }
 
       var id = $routeParams.id;
@@ -374,7 +385,7 @@
 
       if (typeof id != "string" || id.trim().length <= 0) {
         return alertify.error("Invalid arguments", function () {
-          Util.GoBack();
+          Util.goBack();
         });
       }
 
@@ -383,16 +394,15 @@
       };
 
       (function GetCategories () {
-        $http.post("/info")
-          .success(function (result) {
-            $scope.categories = result.categories;
-          });
+        Util.get({ method: "info" }).then(function (result) {
+          $scope.categories = result.categories;
+        });
       })();
 
-      Blog.fetch({id: id}, function (result) {
+      Util.get({ method: "get", id: id }).then(function (result) {
         if (result.message) {
           alertify.error(result.message, function () {
-            Util.GoBack();
+            Util.goBack();
           });
         } else {
           $scope.title = result.title;
@@ -449,6 +459,7 @@
               return alertify.error("content can't be empty!");
             }
             var data = {
+              method: "save",
               id: id,
               title: title,
               date: date,
@@ -458,9 +469,14 @@
               accessible: accessible
             };
 
-            Blog.save(data, function (result) {
+            Util.get(data).then(function (result) {
               if (result.success) {
-                alertify.success("Post edit successful", 5, Util.GoBack);
+                alertify
+                .alert("Post edited successful")
+                .set("closable", false)
+                .set("onok", function () {
+                  Util.goBack();
+                });
               } else {
                 alertify.error(result.message || "System Error");
               }
@@ -476,22 +492,21 @@
 
 
   qhwebControllers.controller("configController", [
-    "$scope", "$http", "Util",
-    function ($scope, $http, Util) {
-    Util.Title("Config");
+    "$scope", "Util",
+    function ($scope, Util) {
+    Util.title("Config");
     $scope.siteName = "";
     $scope.siteSubtitle = "";
     $scope.url = "";
     $scope.itemOfPage = "";
     $scope.key = "";
 
-    if (Util.HasKey()) {
-      $scope.key = Util.Key();
+    if (Util.hasKey()) {
+      $scope.key = Util.key();
     }
 
     (function GetInfo () {
-      $http.post("/info")
-        .success(function (result) {
+      Util.get({ method: "info" }).then(function (result) {
           var cf = result.config;
           $scope.siteName = cf.siteName;
           $scope.siteSubtitle = cf.siteSubtitle;
@@ -509,6 +524,7 @@
             }
 
             var obj = {
+              method: "config",
               key: $scope.key,
               itemOfPage: itemOfPage,
               siteName: $scope.siteName,
@@ -516,14 +532,13 @@
               url: $scope.url
             };
 
-            $http.post("/config", obj)
-              .success(function (result) {
-                if (result.ok) {
-                  alertify.success("config update success");
-                } else {
-                  alertify.error(result.message || "System Error");
-                }
-              });
+            Util.get(obj).then(function (result) {
+              if (result.ok) {
+                alertify.success("config update success");
+              } else {
+                alertify.error(result.message || "System Error");
+              }
+            });
 
           };
         });
@@ -533,15 +548,15 @@
 
 
   qhwebControllers.controller("passwordController", [
-    "$scope", "$http", "Util",
-    function ($scope, $http, Util) {
-    Util.Title("Change Password");
+    "$scope", "Util",
+    function ($scope, Util) {
+    Util.title("Change Password");
     $scope.okey = "";
     $scope.nkey = "";
     $scope.rkey = "";
 
-    if (Util.HasKey()) {
-      $scope.okey = Util.Key();
+    if (Util.hasKey()) {
+      $scope.okey = Util.key();
     }
 
     $scope.Submit = function () {
@@ -553,19 +568,18 @@
         return alertify.alert("new key is different from repeat!");
       }
 
-      $http.post("password", {key: $scope.okey, nkey: $scope.nkey})
-        .success(function (result) {
-          if (result.ok) {
-            alertify.success("success", 5, function () {
-              if (Util.HasKey()) {
-                Util.SetKey($scope.nkey);
-              }
-              Util.GoBack();
-            });
-          } else {
-            alertify.error(result.message || "System Error");
-          }
-        });
+      Util.get({ method: "password", key: $scope.okey, nkey: $scope.nkey }).then(function (result) {
+        if (result.ok) {
+          alertify.success("success", 5, function () {
+            if (Util.hasKey()) {
+              Util.setKey($scope.nkey);
+            }
+            Util.goBack();
+          });
+        } else {
+          alertify.error(result.message || "System Error");
+        }
+      });
     };
 
   }]);
