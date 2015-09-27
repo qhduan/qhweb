@@ -9,17 +9,11 @@ var compression = require('compression');
 var config = require("./config");
 var tool = require("./tool");
 var post = require("./post");
-var encrypt = require("./encrypt");
 
 var app = express();
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json());
 app.use(compression());
-
-app.get("/publicKey", function (req, res) {
-  res.json({ publicKey: encrypt.publicKey });
-  res.end();
-});
 
 app.post('/upload', multipart(), tool.UploadHandle);
 
@@ -27,18 +21,20 @@ app.post("/blog", function (req, res) {
   var clientData = req.body;
 
   if (typeof clientData == "object" && clientData.content) {
-    var data = encrypt.decrypt(clientData.content);
+    var data = clientData.content;
 
-    if (!data || !clientData.clientPublicKey || !encrypt.encrypt("test", clientData.clientPublicKey)) {
-      console.error(clientData);
-      res.json({ message: "Invalid public key" });
+    try {
+      data = JSON.parse(data);
+    } catch (e) {
+      res.json({ message: "Invalid data parse" });
+      res.end();
       return;
     }
 
     var callback = function (json) {
       try {
         var str = JSON.stringify(json);
-        res.json({ content: encrypt.encrypt(str, clientData.clientPublicKey) });
+        res.json({ content: str });
         res.end();
       } catch (e) {
         console.log(data, json);
