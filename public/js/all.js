@@ -413,6 +413,50 @@ f+" > 4096 bytes)!");k.cookie=e}}c.module("ngCookies",["ng"]).provider("$cookies
     $locationProvider.html5Mode(true);
   }]);
 
+  function base64decode(str) {
+    return decodeURIComponent(escape(window.atob(str)));
+  }
+
+  function base64encode(str) {
+    return window.btoa(unescape(encodeURIComponent(str)));
+  }
+
+  function encode (object) {
+    var str = JSON.stringify(object);
+    var b64 = base64encode(str);
+
+    // fake encrypt
+    var ret = "";
+    for (var i = 0, len = b64.length; i < len; i += 4) {
+      ret += b64[i+3];
+      ret += b64[i+2];
+      ret += b64[i+1];
+      ret += b64[i];
+    }
+    return ret;
+  }
+
+  function decode (str) {
+    var b64 = str;
+
+    // fake decrypt
+    var ret = "";
+    for (var i = 0, len = b64.length; i < len; i += 4) {
+      ret += b64[i+3];
+      ret += b64[i+2];
+      ret += b64[i+1];
+      ret += b64[i];
+    }
+    var s = base64decode(ret);
+    var object = null;
+    try {
+      object = JSON.parse(s);
+    } catch (e) {
+      return null;
+    }
+    return object;
+  }
+
   qhweb.factory("Util", [
     "$rootScope", "$location", "$http", "$q", "$document", "$cookies",
     function ($rootScope, $location, $http, $q, $document, $cookies) {
@@ -423,7 +467,7 @@ f+" > 4096 bytes)!");k.cookie=e}}c.module("ngCookies",["ng"]).provider("$cookies
       Util.get = function (data) {
         return $q(function (resolve, reject) {
 
-          var encode_data = JSON.stringify(data);
+          var encode_data = encode(data);
 
           $http.post("blog", { // http://site_address/blog
             content: encode_data
@@ -435,7 +479,7 @@ f+" > 4096 bytes)!");k.cookie=e}}c.module("ngCookies",["ng"]).provider("$cookies
               } else if (response.data.content && response.data.content.length) {
                 var data = response.data.content;
                 try {
-                  data = JSON.parse(data);
+                  data = decode(data);
                 } catch (e) {
                   console.error("Data parse failed");
                   console.error(response);
