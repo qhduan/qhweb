@@ -4,7 +4,6 @@ var fs = require("fs");
 var util = require("util");
 
 var config = require("./config");
-var encrypt = require("./encrypt");
 
 
 var DATABASE = __dirname + "/database/";

@@ -17,15 +17,59 @@ app.use(compression());
 
 app.post('/upload', multipart(), tool.UploadHandle);
 
+function base64decode(str) {
+  var b = new Buffer(str, "base64");
+  return b.toString();
+}
+
+function base64encode(str) {
+  var b = new Buffer(str, "utf8");
+  return b.toString("base64");
+}
+
+function encode (object) {
+  var str = JSON.stringify(object);
+  var b64 = base64encode(str);
+
+  // fake encrypt
+  var ret = "";
+  for (var i = 0, len = b64.length; i < len; i += 4) {
+    ret += b64[i+3];
+    ret += b64[i+2];
+    ret += b64[i+1];
+    ret += b64[i];
+  }
+  return ret;
+}
+
+function decode (str) {
+  var b64 = str;
+
+  // fake decrypt
+  var ret = "";
+  for (var i = 0, len = b64.length; i < len; i += 4) {
+    ret += b64[i+3];
+    ret += b64[i+2];
+    ret += b64[i+1];
+    ret += b64[i];
+  }
+  var s = base64decode(ret);
+  var object = null;
+  try {
+    object = JSON.parse(s);
+  } catch (e) {
+    return null;
+  }
+  return object;
+}
+
 app.post("/blog", function (req, res) {
   var clientData = req.body;
 
   if (typeof clientData == "object" && clientData.content) {
-    var data = clientData.content;
+    var data = decode(clientData.content);
 
-    try {
-      data = JSON.parse(data);
-    } catch (e) {
+    if (!data) {
       res.json({ message: "Invalid data parse" });
       res.end();
       return;
@@ -33,7 +77,7 @@ app.post("/blog", function (req, res) {
 
     var callback = function (json) {
       try {
-        var str = JSON.stringify(json);
+        var str = encode(json);
         res.json({ content: str });
         res.end();
       } catch (e) {

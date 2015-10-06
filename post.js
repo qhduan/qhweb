@@ -6,8 +6,6 @@ var util = require("util");
 var config = require("./config")
 var tool = require("./tool");
 
-var encrypt = require("./encrypt");
-
 var Cache = {}; // 保存各种缓存
 
 
