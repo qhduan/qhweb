@@ -13,8 +13,7 @@
     "express": "latest",
     "body-parser": "latest",
     "connect-multiparty": "latest",
-    "compression": "latest",
-    "node-rsa": "latest"
+    "compression": "latest"
   },
   "license": "GPL-3.0",
   "engines": {

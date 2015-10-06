@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="description" content="Web Blog - QHWEB">
+  <meta name="author" content="mail@qhduan.com">
+  <link rel="shortcut icon" href="icon.png" type="image/png">
+  <link rel="icon" href="icon.gif" type="image/gif">
+  <title>EditorTest</title>
+  <style>
+
+    .aa {
+      animation: myfirst 0.25s;
+    }
+
+    button:hover {
+      animation: myfirst 2s;
+    }
+
+    @keyframes myfirst {
+      0%   { transform: rotateY(0deg); transform-origin: 50% 50%; }
+      100% { transform: rotateY(360deg); transform-origin: 50% 50%; }
+    }
+  </style>
+</head>
+<body>  
+
+  <div id="Editor"></div>
+
+  <script src="editor.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,111 @@
+
+
+.Editor {
+  border: 1px solid #ccc;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.EditorInput, .EditorInputRender {
+  border: 1px solid #ccc;
+  padding: 5px;
+  position: fixed;
+  resize: none;
+  margin: 2px;
+  word-break: break-all;
+  font-family: monospace;
+  font-size: 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.EditorInputRender pre {
+  white-space: pre-wrap;       /* CSS 3 */
+  white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  word-break: break-all;
+  margin: 0;
+}
+
+/* 去掉按钮选中时的边框 */
+.EditorInput {
+  outline: 0;
+}
+.EditorInput:hover, .EditorInput:active, .EditorInput:focus {
+  outline: none;
+}
+.EditorInput::-moz-focus-inner {
+  border: 0;
+}
+
+.EditorInput {
+  opacity: 0.25;
+  color: black;
+}
+
+.EditorInputRender, .EditorInputRender pre {
+  pointer-events: none;
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+  background: transparent;
+}
+
+.EditorToolbar {
+  border: 1px solid #ccc;
+  height: 32px;
+  margin: 2px;
+  margin-bottom: 0px;
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -o-user-select: none;
+}
+
+.EditorToolbar img {
+  width: 24px;
+  height: 24px;
+  margin: 4px;
+  padding: 0;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100%;
+  box-shadow: 1px 1px 1px #888888;
+}
+
+.EditorToolbar img:hover {
+  opacity: 0.8;
+  filter: brightness(0.1);
+  -webkit-filter: brightness(0.1);
+  -moz-filter: brightness(0.1);
+  -ms-filter: brightness(0.1);
+  animation: scale 1s linear 0s infinite;
+}
+
+.EditorToolbar img:active {
+  box-shadow: 1px 1px 1px #888888 inset;
+}
+
+@keyframes scale {
+  0%   { transform: rotateY(0deg); transform-origin: 50% 50%; }
+  100% { transform: rotateY(360deg); transform-origin: 50% 50%; }
+}
+
+.EditorOutputRender {
+  border: 1px solid #ccc;
+  position: fixed;
+  margin: 2px;
+  font-family: monospace;
+  font-size: 14px;
+  overflow-y: auto;
+}
+
+@media (min-width: 992px) {
+
+}
